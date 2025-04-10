@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+pydantic
+sqlalchemy
+psycopg2-binary
+sqlalchemy_utils
+pymysql
+#fastapi-jwt-auth
+git+https://github.com/Flickering-AI/fastapi-jwt-auth.git@master
+passlib
+python-multipart
+bcrypt
