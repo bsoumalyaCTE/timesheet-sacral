@@ -92,3 +92,11 @@ customer_names = [{"id": customer.id, "name": customer.name} for customer in cus
 return customer_names
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+def get_all_customers_crud(db):
+try:
+customers = db.query(Customer).all()
+if not customers:
+raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No customers found")
+return customers
+except Exception as e:
+raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
