@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends, status
 from sqlalchemy.orm import Session
 from configs.database import get_db
 from configs.schemas.customer_schema import *
-from configs.models import Customer
+from configs.models import Customer, Project, ProjectTeamMember   Assuming these models exist
 from datetime import datetime, date
 import os
 UPLOAD_DIR = "uploads/customers/"
@@ -139,5 +139,36 @@ customers = db.query(Customer).all()
 if not customers:
 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No customers found")
 return [{"id": customer.id, "name": customer.name} for customer in customers]
+except Exception as e:
+raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+New function to assign project teams
+def assign_project_team_crud(db: Session, project_id: int, team_members: list):
+try:
+Fetch the project
+project = db.query(Project).filter(Project.id == project_id).first()
+if not project:
+raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+Validate and assign team members
+total_allocation = 0
+for member in team_members:
+total_allocation += member['allocation_percentage']
+if total_allocation > 100:
+raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Total allocation percentage exceeds 100%")
+Add or update team member
+existing_member = db.query(ProjectTeamMember).filter(
+ProjectTeamMember.project_id == project_id,
+ProjectTeamMember.user_id == member['user_id']
+).first()
+if existing_member:
+existing_member.allocation_percentage = member['allocation_percentage']
+else:
+new_member = ProjectTeamMember(
+project_id=project_id,
+user_id=member['user_id'],
+allocation_percentage=member['allocation_percentage']
+)
+db.add(new_member)
+db.commit()
+return {"message": "Project team assigned successfully"}
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
