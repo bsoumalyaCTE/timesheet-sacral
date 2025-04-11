@@ -21,7 +21,7 @@ def create_customer(
 name: str = Form(...),   Accept `name` as a form field
 description: Optional[str] = Form(None),   Accept `description` as a form field
 logo: UploadFile = File(None),   Accept `logo` as a file
-db: Session = Depends(get_db), Authorize: AuthJWT = Depends()): Verify the JWT token
+db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):   Verify the JWT token
 try:
 Authorize.jwt_required()
 except Exception as e:
@@ -158,3 +158,29 @@ crud_response = update_project_crud(db, project_id, project_data)
 if not crud_response:
 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
 return {"status": status.HTTP_200_OK, "message": "Project updated successfully with currency.", "data": crud_response}
+New endpoint to add a customer from the 'Select Customer' dropdown
+@customer_router.post("/add_from_dropdown", response_model=CustomerResponse, status_code=status.HTTP_201_CREATED)
+def add_customer_from_dropdown(
+name: str = Form(...),   Accept `name` as a form field
+description: Optional[str] = Form(None),   Accept `description` as a form field
+logo: UploadFile = File(None),   Accept `logo` as a file
+db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):   Verify the JWT token
+try:
+Authorize.jwt_required()
+except Exception as e:
+raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid or expired.")
+Save the uploaded image file if provided
+if logo:
+logo_path = save_file(logo, UPLOAD_DIR)
+customer_data = CustomerCreate(
+name=name,
+description=description,
+logo=logo_path
+)
+crud_response = create_customer_crud(db, customer_data)
+if crud_response:
+Broadcast the update to all active sessions (pseudo-code, implement as needed)
+broadcast_update_to_sessions()
+return {"status": status.HTTP_200_OK, "message": "Customer added from dropdown successfully.", "data": crud_response}
+else:
+raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Customer addition failed.")
