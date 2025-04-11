@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, status
 from configs.database import get_db
 from configs.schemas.user_schema import signUpModel
-from configs.models import User, Project   Assuming Project model exists
+from configs.models import User, Project, Customer   Assuming Project and Customer models exist
 from lib.helper import get_password_hash
 def signup_user_crud(db, user):
 try:
@@ -67,7 +67,6 @@ raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not foun
 return user
 except Exception as e:
 raise HTTPException(status_code=400, detail=str(e))
-New CRUD functions for Project billing options
 def get_project_billing_option_crud(db, project_id):
 try:
 project = db.query(Project).filter(Project.id == project_id).first()
@@ -91,5 +90,40 @@ try:
 db.add(project)
 db.commit()
 return project
+except Exception as e:
+raise HTTPException(status_code=400, detail=str(e))
+New CRUD functions for Project module
+def add_project_crud(db, project_data, user):
+try:
+Check if user is authorized
+if not user.is_authorized:
+raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User not authorized to add projects")
+Create new project
+new_project = Project(
+name=project_data.name,
+description=project_data.description,
+customer_id=project_data.customer_id,
+start_date=project_data.start_date,
+end_date=project_data.end_date,
+billing_option=project_data.billing_option
+)
+db.add(new_project)
+db.commit()
+return new_project
+except Exception as e:
+raise HTTPException(status_code=400, detail=str(e))
+def update_customer_list_crud(db, new_customer_data):
+try:
+Add new customer
+new_customer = Customer(
+name=new_customer_data.name,
+email=new_customer_data.email,
+phone=new_customer_data.phone
+)
+db.add(new_customer)
+db.commit()
+Return updated customer list
+customers = db.query(Customer).all()
+return customers
 except Exception as e:
 raise HTTPException(status_code=400, detail=str(e))
