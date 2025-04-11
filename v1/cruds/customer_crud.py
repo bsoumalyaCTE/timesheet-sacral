@@ -107,3 +107,28 @@ raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No customers 
 return customers
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+def add_customer_crud(db: Session, customer):
+try:
+Check if the customer with the same name already exists
+existing_customer = db.query(Customer).filter(Customer.name == customer.name).first()
+if existing_customer:
+raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Customer already exists")
+Validate currency
+if customer.currency not in PREDEFINED_CURRENCIES:
+raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid currency selected")
+new_customer = Customer(
+name=customer.name,
+description=customer.description,
+logo=customer.logo,
+create_timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+hourly_rate=customer.hourly_rate,   New field for hourly rate
+currency=customer.currency   New field for currency
+)
+db.add(new_customer)
+db.commit()
+db.refresh(new_customer)
+Notify the client-side about the new customer addition
+notify_customer_addition(new_customer)
+return new_customer
+except Exception as e:
+raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
