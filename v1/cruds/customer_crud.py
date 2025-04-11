@@ -7,6 +7,10 @@ from datetime import datetime, date
 import os
 UPLOAD_DIR = "uploads/customers/"
 PREDEFINED_CURRENCIES = ["USD", "EUR", "GBP", "INR"]   Example list of predefined currencies
+def notify_customer_addition(customer):
+This function should contain the logic to notify the client-side about the new customer addition.
+For example, it could send a message to a WebSocket or trigger a server-sent event.
+pass
 def create_customer_crud(db: Session, customer):
 try:
 Check if the customer with the same name already exists
@@ -27,6 +31,8 @@ currency=customer.currency   New field for currency
 db.add(new_customer)
 db.commit()
 db.refresh(new_customer)
+Notify the client-side about the new customer addition
+notify_customer_addition(new_customer)
 return new_customer
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
