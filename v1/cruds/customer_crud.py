@@ -132,3 +132,12 @@ notify_customer_addition(new_customer)
 return new_customer
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+New function to fetch customers for dropdown
+def get_customers_for_dropdown(db: Session):
+try:
+customers = db.query(Customer).all()
+if not customers:
+raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No customers found")
+return [{"id": customer.id, "name": customer.name} for customer in customers]
+except Exception as e:
+raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
