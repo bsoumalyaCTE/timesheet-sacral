@@ -18,10 +18,10 @@ CURRENCIES = ["USD", "EUR", "GBP", "INR", "JPY"]
 Create a new customer
 @customer_router.post("/", response_model=CustomerResponse, status_code=status.HTTP_201_CREATED)
 def create_customer(
-name: str = Form(...),   Accept `name` as a form field
-description: Optional[str] = Form(None),   Accept `description` as a form field
-logo: UploadFile = File(None),   Accept `logo` as a file
-db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):   Verify the JWT token
+name: str = Form(...),    Accept `name` as a form field
+description: Optional[str] = Form(None),    Accept `description` as a form field
+logo: UploadFile = File(None),    Accept `logo` as a file
+db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):    Verify the JWT token
 try:
 Authorize.jwt_required()
 except Exception as e:
@@ -34,6 +34,11 @@ name=name,
 description=description,
 logo=logo_path
 )
+else:
+customer_data = CustomerCreate(
+name=name,
+description=description
+)
 crud_response = create_customer_crud(db, customer_data)
 if crud_response:
 return {"status": status.HTTP_200_OK, "message": "Customer created successfully.", "data": crud_response}
@@ -43,9 +48,9 @@ Update a customer by ID
 @customer_router.put("/{customer_id}", response_model=CustomerResponse)
 def update_customer(
 customer_id: int,
-name: str = Form(...),   Accept `name` as a form field
-description: Optional[str] = Form(None),   Accept `description` as a form field
-logo: UploadFile = File(None),   Accept `logo` as a file
+name: str = Form(...),    Accept `name` as a form field
+description: Optional[str] = Form(None),    Accept `description` as a form field
+logo: UploadFile = File(None),    Accept `logo` as a file
 db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
 Verify the JWT token
 try:
@@ -158,13 +163,24 @@ crud_response = update_project_crud(db, project_id, project_data)
 if not crud_response:
 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
 return {"status": status.HTTP_200_OK, "message": "Project updated successfully with currency.", "data": crud_response}
+New endpoint to fetch all customers for the dropdown
+@customer_router.get("/all", response_model=AllCustomerResponse)
+def get_all_customers_for_dropdown(db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
+try:
+Authorize.jwt_required()
+except Exception as e:
+raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid or expired.")
+crud_response = list_customers_crud(db)
+if not crud_response:
+raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No customers found")
+return {"status": status.HTTP_200_OK, "message": "All Customer Lists for Dropdown.", "data": crud_response}
 New endpoint to add a customer from the 'Select Customer' dropdown
 @customer_router.post("/add_from_dropdown", response_model=CustomerResponse, status_code=status.HTTP_201_CREATED)
 def add_customer_from_dropdown(
-name: str = Form(...),   Accept `name` as a form field
-description: Optional[str] = Form(None),   Accept `description` as a form field
-logo: UploadFile = File(None),   Accept `logo` as a file
-db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):   Verify the JWT token
+name: str = Form(...),    Accept `name` as a form field
+description: Optional[str] = Form(None),    Accept `description` as a form field
+logo: UploadFile = File(None),    Accept `logo` as a file
+db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):    Verify the JWT token
 try:
 Authorize.jwt_required()
 except Exception as e:
@@ -176,6 +192,11 @@ customer_data = CustomerCreate(
 name=name,
 description=description,
 logo=logo_path
+)
+else:
+customer_data = CustomerCreate(
+name=name,
+description=description
 )
 crud_response = create_customer_crud(db, customer_data)
 if crud_response:
