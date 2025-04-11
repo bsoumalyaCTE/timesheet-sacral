@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, status
 from configs.database import get_db
 from configs.schemas.user_schema import signUpModel
-from configs.models import User, Project, Customer   Assuming Project and Customer models exist
+from configs.models import User, Project, Customer, ProjectTeam   Assuming ProjectTeam model exists
 from lib.helper import get_password_hash
 def signup_user_crud(db, user):
 try:
@@ -125,5 +125,52 @@ db.commit()
 Return updated customer list
 customers = db.query(Customer).all()
 return customers
+except Exception as e:
+raise HTTPException(status_code=400, detail=str(e))
+New functions for project team management
+def assign_project_team_crud(db, project_id, team_data):
+try:
+project = db.query(Project).filter(Project.id == project_id).first()
+if not project:
+raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+total_allocation = sum(member['allocation'] for member in team_data)
+if total_allocation > 100:
+raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Total allocation exceeds 100%")
+for member in team_data:
+user = db.query(User).filter(User.id == member['user_id']).first()
+if not user:
+raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"User {member['user_id']} not found")
+project_team = ProjectTeam(
+project_id=project_id,
+user_id=member['user_id'],
+allocation=member['allocation']
+)
+db.add(project_team)
+db.commit()
+return {"message": "Project team assigned successfully"}
+except Exception as e:
+raise HTTPException(status_code=400, detail=str(e))
+def update_project_team_crud(db, project_id, team_data):
+try:
+project = db.query(Project).filter(Project.id == project_id).first()
+if not project:
+raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+total_allocation = sum(member['allocation'] for member in team_data)
+if total_allocation > 100:
+raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Total allocation exceeds 100%")
+Clear existing team assignments
+db.query(ProjectTeam).filter(ProjectTeam.project_id == project_id).delete()
+for member in team_data:
+user = db.query(User).filter(User.id == member['user_id']).first()
+if not user:
+raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"User {member['user_id']} not found")
+project_team = ProjectTeam(
+project_id=project_id,
+user_id=member['user_id'],
+allocation=member['allocation']
+)
+db.add(project_team)
+db.commit()
+return {"message": "Project team updated successfully"}
 except Exception as e:
 raise HTTPException(status_code=400, detail=str(e))
