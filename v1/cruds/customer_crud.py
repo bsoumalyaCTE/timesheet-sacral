@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends, status
+from sqlalchemy.orm import Session
 from configs.database import get_db
 from configs.schemas.customer_schema import *
 from configs.models import Customer
@@ -6,7 +7,7 @@ from datetime import datetime, date
 import os
 UPLOAD_DIR = "uploads/customers/"
 PREDEFINED_CURRENCIES = ["USD", "EUR", "GBP", "INR"]   Example list of predefined currencies
-def create_customer_crud(db, customer):
+def create_customer_crud(db: Session, customer):
 try:
 Check if the customer with the same name already exists
 existing_customer = db.query(Customer).filter(Customer.name == customer.name).first()
@@ -29,7 +30,7 @@ db.refresh(new_customer)
 return new_customer
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-def list_customers_crud(db):
+def list_customers_crud(db: Session):
 try:
 customers = db.query(Customer).all()
 if not customers:
@@ -37,7 +38,7 @@ raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No customers 
 return customers
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-def get_customer_crud(db, customer_id):
+def get_customer_crud(db: Session, customer_id: int):
 try:
 customer = db.query(Customer).filter(Customer.id == customer_id).first()
 if not customer:
@@ -45,7 +46,7 @@ raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer not 
 return customer
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-def update_customer_crud(db, customer_id, customer):
+def update_customer_crud(db: Session, customer_id: int, customer):
 try:
 existing_customer = db.query(Customer).filter(Customer.id == customer_id).first()
 if not existing_customer:
@@ -69,7 +70,7 @@ db.refresh(existing_customer)
 return existing_customer
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-def delete_customer_crud(db, customer_id):
+def delete_customer_crud(db: Session, customer_id: int):
 try:
 customer = db.query(Customer).filter(Customer.id == customer_id).first()
 if customer.logo:
@@ -83,7 +84,7 @@ db.commit()
 return {"message": "Customer deleted successfully"}
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-def list_customers_name(db):
+def list_customers_name(db: Session):
 try:
 customers = db.query(Customer).all()
 if not customers:
@@ -92,7 +93,7 @@ customer_names = [{"id": customer.id, "name": customer.name} for customer in cus
 return customer_names
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-def get_all_customers_crud(db):
+def get_all_customers_crud(db: Session):
 try:
 customers = db.query(Customer).all()
 if not customers:
