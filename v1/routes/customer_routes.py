@@ -148,6 +148,7 @@ Get a list of all customers with filtering and pagination
 def list_customers(
 page: int = Query(1, ge=1),   Page number, default is 1
 page_size: int = Query(10, ge=1),   Page size, default is 10
+anonymize: bool = Query(False),   Option to anonymize customer names
 db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
 try:
 Authorize.jwt_required()
@@ -162,6 +163,10 @@ if not crud_response:
 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No customers found")
 Log the access attempt in the audit trail
 log_audit_trail("List Customers", Authorize.get_jwt_subject(), "Accessed customer list")
+Anonymize customer names if requested
+if anonymize:
+for customer in crud_response:
+customer.name = "Anonymous"
 return {"status": status.HTTP_200_OK, "message": "All Customer Lists.", "data": crud_response, "customer_names": customer_name_response}
 Delete a customer by ID
 @customer_router.delete("/{customer_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -363,9 +368,3 @@ New endpoint to view audit trail
 @project_router.get("/audit_trail", status_code=status.HTTP_200_OK)
 def view_audit_trail(db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
 try:
-Authorize.jwt_required()
-check_user_role("Project Manager", Authorize)
-except HTTPException as e:
-raise e
-except Exception as e:
-raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="
