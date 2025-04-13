@@ -56,7 +56,16 @@ try:
 users = db.query(User).all()
 if not users:
 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No users found")
-return users
+Fetch current allocation for each user
+user_data = []
+for user in users:
+current_allocation = db.query(ProjectTeam).filter(ProjectTeam.user_id == user.id).all()
+total_allocation = sum([team.allocation for team in current_allocation])
+user_data.append({
+"user": user,
+"current_allocation": total_allocation
+})
+return user_data
 except Exception as e:
 raise HTTPException(status_code=400, detail=str(e))
 def get_user_by_id_crud(db, user_id):
