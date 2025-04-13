@@ -202,11 +202,16 @@ Delete a customer by ID
 def delete_customer(customer_id: int, db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
 try:
 Authorize.jwt_required()
+check_user_role("Project Manager", Authorize)   Ensure the user has the necessary role to delete a customer
+except HTTPException as e:
+raise e
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid or expired.")
 crud_response = delete_customer_crud(db, customer_id)
 if not crud_response:
 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer not found")
+Log the deletion action for audit trail
+log_audit_trail("Delete Customer", Authorize.get_jwt_subject(), f"Deleted customer ID: {customer_id}")
 return {"status": status.HTTP_200_OK, "message": "Customer record deleted successfully.", "data": crud_response}
 Create a new project
 @project_router.post("/", status_code=status.HTTP_201_CREATED)
@@ -368,12 +373,4 @@ New endpoint to assign roles to team members
 def assign_role(
 project_id: int,
 user_id: int,
-role: str = Form(...),
-db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
-try:
-Authorize.jwt_required()
-check_user_role("Project Manager", Authorize)
-except HTTPException as e:
-raise e
-except Exception as e:
-raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid
+role: str = Form(...
