@@ -84,6 +84,8 @@ except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 def get_customer_crud(db: Session, customer_id: int):
 try:
+Ensure data is up-to-date by triggering synchronization if needed
+sync_with_crm(db)
 customer = db.query(Customer).filter(Customer.id == customer_id).first()
 if not customer:
 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer not found")
