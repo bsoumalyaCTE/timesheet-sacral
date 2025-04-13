@@ -53,6 +53,9 @@ async def refresh_token(Authorize: AuthJWT = Depends()):
 try:
 Authorize.jwt_refresh_token_required()
 current_user = Authorize.get_jwt_subject()
+Check if MFA is completed before issuing a new access token
+if not MFAService().is_mfa_completed(current_user):
+raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="MFA not completed.")
 new_access_token = Authorize.create_access_token(subject=current_user, fresh=False)
 return {"status": status.HTTP_200_OK, "message": "Access token refreshed successfully.", "access_token": new_access_token}
 except Exception as e:
