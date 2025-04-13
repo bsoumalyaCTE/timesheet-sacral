@@ -25,10 +25,10 @@ CURRENCIES = ["USD", "EUR", "GBP", "INR", "JPY"]
 Create a new customer
 @customer_router.post("/", response_model=CustomerResponse, status_code=status.HTTP_201_CREATED)
 def create_customer(
-name: str = Form(...),     Accept `name` as a form field
-description: Optional[str] = Form(None),     Accept `description` as a form field
-logo: UploadFile = File(None),     Accept `logo` as a file
-db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):     Verify the JWT token
+name: str = Form(...),   Accept `name` as a form field
+description: Optional[str] = Form(None),   Accept `description` as a form field
+logo: UploadFile = File(None),   Accept `logo` as a file
+db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):   Verify the JWT token
 try:
 Authorize.jwt_required()
 except Exception as e:
@@ -48,17 +48,27 @@ description=description
 )
 crud_response = create_customer_crud(db, customer_data)
 if crud_response:
+Trigger synchronization with CRM after customer creation
+sync_with_crm.delay(crud_response.id)
 return {"status": status.HTTP_200_OK, "message": "Customer created successfully.", "data": crud_response}
 else:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User creation failed.")
+Synchronize customer data with CRM
+@celery_app.task
+def sync_with_crm(customer_id: int):
+Logic to synchronize customer data with CRM
+This is a placeholder for the actual CRM integration logic
+logger.info(f"Synchronizing customer data for customer ID: {customer_id}")
+Simulate successful synchronization
+logger.info(f"Customer data for customer ID: {customer_id} synchronized successfully.")
 Update a customer by ID
 @customer_router.put("/{customer_id}", response_model=CustomerResponse)
 def update_customer(
 customer_id: int,
-name: str = Form(...),     Accept `name` as a form field
-description: Optional[str] = Form(None),     Accept `description` as a form field
-logo: UploadFile = File(None),     Accept `logo` as a file
-db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):     Verify the JWT token
+name: str = Form(...),   Accept `name` as a form field
+description: Optional[str] = Form(None),   Accept `description` as a form field
+logo: UploadFile = File(None),   Accept `logo` as a file
+db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):   Verify the JWT token
 try:
 Authorize.jwt_required()
 except Exception as e:
@@ -88,14 +98,6 @@ raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer not 
 Call the synchronization function after updating the customer
 synchronize_customer_data.delay(customer_id)
 return {"status": status.HTTP_200_OK, "message": "Customer record updated successfully.", "data": crud_response}
-Synchronize customer data with CRM
-@celery_app.task
-def synchronize_customer_data(customer_id: int):
-Logic to synchronize customer data with CRM
-This is a placeholder for the actual CRM integration logic
-logger.info(f"Synchronizing customer data for customer ID: {customer_id}")
-Simulate successful synchronization
-logger.info(f"Customer data for customer ID: {customer_id} synchronized successfully.")
 Background task to periodically check for updates in the CRM
 @celery_app.task
 def periodic_crm_sync():
@@ -107,7 +109,7 @@ Schedule the periodic CRM synchronization task
 celery_app.conf.beat_schedule = {
 'periodic-crm-sync': {
 'task': 'periodic_crm_sync',
-'schedule': 300.0,    Run every 5 minutes
+'schedule': 300.0,   Run every 5 minutes
 },
 }
 Get a single customer by ID
@@ -204,10 +206,10 @@ return {"status": status.HTTP_200_OK, "message": "All Customer Lists for Dropdow
 New endpoint to add a customer from the 'Select Customer' dropdown
 @customer_router.post("/add_from_dropdown", response_model=CustomerResponse, status_code=status.HTTP_201_CREATED)
 def add_customer_from_dropdown(
-name: str = Form(...),     Accept `name` as a form field
-description: Optional[str] = Form(None),     Accept `description` as a form field
-logo: UploadFile = File(None),     Accept `logo` as a file
-db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):     Verify the JWT token
+name: str = Form(...),   Accept `name` as a form field
+description: Optional[str] = Form(None),   Accept `description` as a form field
+logo: UploadFile = File(None),   Accept `logo` as a file
+db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):   Verify the JWT token
 try:
 Authorize.jwt_required()
 except Exception as e:
@@ -236,8 +238,8 @@ New endpoint to add a project team
 @project_router.post("/add_team", status_code=status.HTTP_201_CREATED)
 def add_project_team(
 project_id: int,
-team_members: List[int] = Form(...),     List of team member IDs
-allocations: List[float] = Form(...),     Corresponding allocation percentages
+team_members: List[int] = Form(...),   List of team member IDs
+allocations: List[float] = Form(...),   Corresponding allocation percentages
 db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
 try:
 Authorize.jwt_required()
@@ -263,8 +265,8 @@ New endpoint to edit a project team
 @project_router.put("/edit_team/{project_id}", status_code=status.HTTP_200_OK)
 def edit_project_team(
 project_id: int,
-team_members: List[int] = Form(...),     List of team member IDs
-allocations: List[float] = Form(...),     Corresponding allocation percentages
+team_members: List[int] = Form(...),   List of team member IDs
+allocations: List[float] = Form(...),   Corresponding allocation percentages
 db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
 try:
 Authorize.jwt_required()
