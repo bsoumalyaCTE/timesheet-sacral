@@ -245,6 +245,58 @@ raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=st
 def synchronize_customer_data(db: Session, background_tasks: BackgroundTasks):
 background_tasks.add_task(sync_with_crm, db)
 return {"message": "Synchronization task has been scheduled."}
+def create_project_crud(db: Session, project):
+try:
+new_project = Project(
+name=project.name,
+description=project.description,
+customer_id=project.customer_id,
+billing_option=project.billing_option,
+start_date=project.start_date,
+end_date=project.end_date
+)
+db.add(new_project)
+db.commit()
+db.refresh(new_project)
+return new_project
+except Exception as e:
+raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+def get_project_crud(db: Session, project_id: int):
+try:
+project = db.query(Project).filter(Project.id == project_id).first()
+if not project:
+raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+return project
+except Exception as e:
+raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+def update_project_crud(db: Session, project_id: int, project, current_user_role: str = Depends(get_current_user_role)):
+try:
+if current_user_role not in ['Project Manager']:
+raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to update project")
+existing_project = db.query(Project).filter(Project.id == project_id).first()
+if not existing_project:
+raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+existing_project.name = project.name
+existing_project.description = project.description
+existing_project.customer_id = project.customer_id
+existing_project.billing_option = project.billing_option
+existing_project.start_date = project.start_date
+existing_project.end_date = project.end_date
+db.commit()
+db.refresh(existing_project)
+return existing_project
+except Exception as e:
+raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+def delete_project_crud(db: Session, project_id: int):
+try:
+project = db.query(Project).filter(Project.id == project_id).first()
+if not project:
+raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+db.delete(project)
+db.commit()
+return {"message": "Project deleted successfully"}
+except Exception as e:
+raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 def create_project_role_crud(db: Session, project_id: int, user_id: int, role: str, current_user_role: str = Depends(get_current_user_role)):
 try:
 if current_user_role not in ['Project Manager']:
