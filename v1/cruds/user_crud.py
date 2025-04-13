@@ -1,8 +1,31 @@
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, HTTPException, Depends, status, BackgroundTasks
 from configs.database import get_db
 from configs.schemas.user_schema import signUpModel
 from configs.models import User, Project, Customer, ProjectTeam   Assuming ProjectTeam model exists
 from lib.helper import get_password_hash
+from datetime import datetime, timedelta
+Assuming CRM integration functions
+def synchronize_crm_data(db, user):
+try:
+Placeholder for CRM synchronization logic
+This function should handle the integration with the CRM system
+and update the User model with synchronization status and timestamps
+user.last_sync_time = datetime.utcnow()
+user.sync_status = "Success"
+db.commit()
+except Exception as e:
+user.sync_status = "Failed"
+db.commit()
+raise HTTPException(status_code=400, detail=f"CRM synchronization failed: {str(e)}")
+def periodic_crm_sync(db):
+try:
+Placeholder for periodic CRM synchronization logic
+This function should be run as a background task
+users = db.query(User).all()
+for user in users:
+synchronize_crm_data(db, user)
+except Exception as e:
+raise HTTPException(status_code=400, detail=f"Periodic CRM synchronization failed: {str(e)}")
 def signup_user_crud(db, user):
 try:
 existing_email = db.query(User).filter(User.email == user.email).first()
@@ -26,14 +49,16 @@ workday_duration=user.workday_duration,
 hire_date=user.hire_date,
 created=user.created,
 is_enabled=user.is_enabled,
-is_locked=user.is_locked
+is_locked=user.is_locked,
+last_sync_time=None,
+sync_status=None
 )
 db.add(new_user)
 db.commit()
 return new_user
 except Exception as e:
 raise HTTPException(status_code=400, detail=str(e))
-def login_user_crud(db, user, Authorize):
+def login_user_crud(db, user, Authorize, background_tasks: BackgroundTasks):
 try:
 db_user = db.query(User).filter(User.username == user.username).first()
 if not db_user:
@@ -44,6 +69,10 @@ if db_user.is_locked:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User is locked")
 if not db_user.is_enabled:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User is disabled")
+Synchronize CRM data after successful login
+synchronize_crm_data(db, db_user)
+Add background task for periodic CRM synchronization
+background_tasks.add_task(periodic_crm_sync, db)
 access_token = Authorize.create_access_token(subject=db_user.username, fresh=True, expires_time=3600)
 refresh_token = Authorize.create_refresh_token(subject=db_user.username)
 db_user.access_token = access_token
