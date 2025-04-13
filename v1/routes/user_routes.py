@@ -3,15 +3,28 @@ from configs.database import get_db
 from fastapi_jwt_auth import AuthJWT
 from configs.schemas.user_schema import *
 from v1.cruds.user_crud import *
-from v1.cruds.project_crud import *   Assuming this is where project-related CRUD functions are defined
-from v1.cruds.crm_integration import *   Assuming this is where CRM integration functions are defined
-from v1.services.role_service import RoleService   Assuming this is where RoleService is defined
-from v1.models.audit_log import AuditLog   Assuming this is where AuditLog is defined
+from v1.cruds.project_crud import *
+from v1.cruds.crm_integration import *
+from v1.services.role_service import RoleService
+from v1.models.audit_log import AuditLog
 user_router = APIRouter(prefix="/user", tags=["Users"])
 @AuthJWT.load_config
 def get_config():
 Enhance this function to include multi-factor authentication options
-return tokenSettings()
+and role-based access control configurations
+class Settings:
+authjwt_secret_key: str = "your_secret_key"
+authjwt_denylist_enabled: bool = True
+authjwt_token_location: set = {"headers", "cookies"}
+authjwt_cookie_csrf_protect: bool = True
+Add role-based access control configurations
+authjwt_roles: dict = {
+"admin": ["create", "read", "update", "delete"],
+"user": ["read"]
+}
+Add multi-factor authentication options if needed
+authjwt_mfa_enabled: bool = True
+return Settings()
 @user_router.post("/signup", response_model=userSignUpResponse, status_code=status.HTTP_201_CREATED,
 tags=["Users"], summary="User Signup", description="Create a new user.",
 response_description="User created successfully.")
@@ -61,7 +74,6 @@ if crud_response:
 return {"status": status.HTTP_200_OK, "message": "Users retrieved successfully.", "data": crud_response}
 else:
 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No users found.")
-New code for project module
 @user_router.post("/projects/add", tags=["Projects"], summary="Add Project", description="Add a new project with currency selection.")
 async def add_project(project: ProjectModel, db=Depends(get_db), Authorize: AuthJWT = Depends()):
 try:
@@ -90,7 +102,6 @@ else:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Project update failed.")
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized access.")
-New endpoints for role-based access control
 @user_router.post("/projects/{project_id}/assign_role", tags=["Projects"], summary="Assign Role", description="Assign a role to a user in a project.")
 async def assign_role(project_id: int, role_assignment: RoleAssignmentModel, db=Depends(get_db), Authorize: AuthJWT = Depends()):
 try:
@@ -133,7 +144,6 @@ else:
 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No audit trail found.")
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized access.")
-New endpoints for CRM integration
 @user_router.post("/crm/sync", tags=["CRM"], summary="Initiate CRM Synchronization", description="Initiate synchronization with the CRM system.")
 async def initiate_crm_sync(db=Depends(get_db), Authorize: AuthJWT = Depends()):
 try:
