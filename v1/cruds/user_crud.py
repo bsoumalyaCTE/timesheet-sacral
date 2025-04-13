@@ -4,8 +4,9 @@ from configs.schemas.user_schema import signUpModel
 from configs.models import User, Project, Customer, ProjectTeam   Assuming ProjectTeam model exists
 from lib.helper import get_password_hash
 from datetime import datetime, timedelta
+import asyncio   Import asyncio for asynchronous tasks
 Assuming CRM integration functions
-def synchronize_crm_data(db, user):
+async def synchronize_user_with_crm(db, user):
 try:
 CRM synchronization logic
 This function should handle the integration with the CRM system
@@ -13,17 +14,19 @@ and update the User model with synchronization status and timestamps
 user.last_sync_time = datetime.utcnow()
 user.sync_status = "Success"
 db.commit()
+Log successful synchronization
+print(f"User {user.username} synchronized successfully at {user.last_sync_time}")
 except Exception as e:
 user.sync_status = "Failed"
 db.commit()
 raise HTTPException(status_code=400, detail=f"CRM synchronization failed: {str(e)}")
-def periodic_crm_sync(db):
+async def periodic_crm_sync(db):
 try:
 Periodic CRM synchronization logic
 This function should be run as a background task
 users = db.query(User).all()
 for user in users:
-synchronize_crm_data(db, user)
+await synchronize_user_with_crm(db, user)
 except Exception as e:
 raise HTTPException(status_code=400, detail=f"Periodic CRM synchronization failed: {str(e)}")
 def signup_user_crud(db, user):
@@ -70,7 +73,7 @@ raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User is lo
 if not db_user.is_enabled:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User is disabled")
 Synchronize CRM data after successful login
-synchronize_crm_data(db, db_user)
+asyncio.run(synchronize_user_with_crm(db, db_user))
 Add background task for periodic CRM synchronization
 background_tasks.add_task(periodic_crm_sync, db)
 access_token = Authorize.create_access_token(subject=db_user.username, fresh=True, expires_time=3600)
