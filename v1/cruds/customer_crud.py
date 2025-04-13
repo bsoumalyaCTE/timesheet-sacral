@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, HTTPException, Depends, status, BackgroundTasks
 from sqlalchemy.orm import Session
 from configs.database import get_db
 from configs.schemas.customer_schema import *
@@ -247,3 +247,7 @@ return {"message": "CRM synchronization completed successfully"}
 except Exception as e:
 logging.error(f"CRM synchronization failed: {str(e)}")
 raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+New function to handle background synchronization
+def synchronize_customer_data(db: Session, background_tasks: BackgroundTasks):
+background_tasks.add_task(sync_with_crm, db)
+return {"message": "Synchronization task has been scheduled."}
