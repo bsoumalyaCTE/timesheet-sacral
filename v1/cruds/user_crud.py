@@ -122,12 +122,41 @@ user_data.append({
 return user_data
 except Exception as e:
 raise HTTPException(status_code=400, detail=str(e))
-def get_user_by_id_crud(db, user_id):
+def get_user_by_id_crud(db, user_id, current_user):
 try:
+Access control: Check if the current user has permission to view the requested user
+if current_user.role not in ['Admin', 'Project Manager']:
+raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+Ensure the user is authenticated and MFA verified
+if not current_user.is_authenticated or (current_user.mfa_enabled and not current_user.mfa_verified):
+raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
 user = db.query(User).filter(User.id == user_id).first()
 if not user:
 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-return user
+Optionally anonymize data
+anonymize = False   This could be a parameter
+if anonymize:
+return {
+"username": user.username,
+"role": user.role
+}
+return {
+"username": user.username,
+"first_name": decrypt_data(user.first_name),
+"middle_name": decrypt_data(user.middle_name),
+"last_name": decrypt_data(user.last_name),
+"email": decrypt_data(user.email),
+"phone": decrypt_data(user.phone),
+"fax": decrypt_data(user.fax),
+"mobile": decrypt_data(user.mobile),
+"other_contact": decrypt_data(user.other_contact),
+"workday_duration": user.workday_duration,
+"hire_date": user.hire_date,
+"created": user.created,
+"is_enabled": user.is_enabled,
+"is_locked": user.is_locked,
+"role": user.role
+}
 except Exception as e:
 raise HTTPException(status_code=400, detail=str(e))
 def get_project_billing_option_crud(db, project_id):
