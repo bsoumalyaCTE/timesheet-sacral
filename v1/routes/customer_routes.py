@@ -1,5 +1,5 @@
 ```python
-from fastapi import APIRouter, HTTPException, Depends, status, File, UploadFile, Form
+from fastapi import APIRouter, HTTPException, Depends, status, File, UploadFile, Form, Query
 from sqlalchemy.orm import Session
 from fastapi_jwt_auth import AuthJWT
 from configs.database import get_db
@@ -37,10 +37,10 @@ logger.info(f"Audit Trail - Action: {action}, User ID: {user_id}, Details: {deta
 Create a new customer
 @customer_router.post("/", response_model=CustomerResponse, status_code=status.HTTP_201_CREATED)
 def create_customer(
-name: str = Form(...),     Accept `name` as a form field
-description: Optional[str] = Form(None),     Accept `description` as a form field
-logo: UploadFile = File(None),     Accept `logo` as a file
-db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):     Verify the JWT token
+name: str = Form(...),   Accept `name` as a form field
+description: Optional[str] = Form(None),   Accept `description` as a form field
+logo: UploadFile = File(None),   Accept `logo` as a file
+db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):   Verify the JWT token
 try:
 Authorize.jwt_required()
 except Exception as e:
@@ -77,10 +77,10 @@ Update a customer by ID
 @customer_router.put("/{customer_id}", response_model=CustomerResponse)
 def update_customer(
 customer_id: int,
-name: str = Form(...),     Accept `name` as a form field
-description: Optional[str] = Form(None),     Accept `description` as a form field
-logo: UploadFile = File(None),     Accept `logo` as a file
-db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):     Verify the JWT token
+name: str = Form(...),   Accept `name` as a form field
+description: Optional[str] = Form(None),   Accept `description` as a form field
+logo: UploadFile = File(None),   Accept `logo` as a file
+db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):   Verify the JWT token
 try:
 Authorize.jwt_required()
 check_user_role("Project Manager", Authorize)
@@ -126,7 +126,7 @@ Schedule the periodic CRM synchronization task
 celery_app.conf.beat_schedule = {
 'periodic-crm-sync': {
 'task': 'periodic_crm_sync',
-'schedule': 300.0,     Run every 5 minutes
+'schedule': 300.0,   Run every 5 minutes
 },
 }
 Get a single customer by ID
@@ -142,9 +142,12 @@ raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer not 
 Trigger synchronization with CRM in the background
 sync_with_crm.delay(customer_id)
 return {"status": status.HTTP_200_OK, "message": "Customer Information fetched.", "data": crud_response}
-Get a list of all customers
+Get a list of all customers with filtering and pagination
 @customer_router.get("/", response_model=AllCustomerResponse)
-def list_customers(db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
+def list_customers(
+page: int = Query(1, ge=1),   Page number, default is 1
+page_size: int = Query(10, ge=1),   Page size, default is 10
+db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
 try:
 Authorize.jwt_required()
 check_user_role("Project Manager", Authorize)
@@ -152,7 +155,7 @@ except HTTPException as e:
 raise e
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid or expired.")
-crud_response = list_customers_crud(db)
+crud_response = list_customers_crud(db, page, page_size)
 customer_name_response = list_customers_name(db)
 if not crud_response:
 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No customers found")
@@ -230,10 +233,10 @@ return {"status": status.HTTP_200_OK, "message": "All Customer Lists for Dropdow
 New endpoint to add a customer from the 'Select Customer' dropdown
 @customer_router.post("/add_from_dropdown", response_model=CustomerResponse, status_code=status.HTTP_201_CREATED)
 def add_customer_from_dropdown(
-name: str = Form(...),     Accept `name` as a form field
-description: Optional[str] = Form(None),     Accept `description` as a form field
-logo: UploadFile = File(None),     Accept `logo` as a file
-db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):     Verify the JWT token
+name: str = Form(...),   Accept `name` as a form field
+description: Optional[str] = Form(None),   Accept `description` as a form field
+logo: UploadFile = File(None),   Accept `logo` as a file
+db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):   Verify the JWT token
 try:
 Authorize.jwt_required()
 except Exception as e:
@@ -262,8 +265,8 @@ New endpoint to add a project team
 @project_router.post("/add_team", status_code=status.HTTP_201_CREATED)
 def add_project_team(
 project_id: int,
-team_members: List[int] = Form(...),     List of team member IDs
-allocations: List[float] = Form(...),     Corresponding allocation percentages
+team_members: List[int] = Form(...),   List of team member IDs
+allocations: List[float] = Form(...),   Corresponding allocation percentages
 db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
 try:
 Authorize.jwt_required()
@@ -289,8 +292,8 @@ New endpoint to edit a project team
 @project_router.put("/edit_team/{project_id}", status_code=status.HTTP_200_OK)
 def edit_project_team(
 project_id: int,
-team_members: List[int] = Form(...),     List of team member IDs
-allocations: List[float] = Form(...),     Corresponding allocation percentages
+team_members: List[int] = Form(...),   List of team member IDs
+allocations: List[float] = Form(...),   Corresponding allocation percentages
 db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
 try:
 Authorize.jwt_required()
@@ -366,9 +369,4 @@ raise e
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid or expired.")
 Logic to fetch audit trail
-Assuming a function `get_audit_trail_crud` exists
-crud_response = get_audit_trail_crud(db)
-if crud_response:
-return {"status": status.HTTP_200_OK, "message": "Audit trail fetched successfully.", "data": crud_response}
-else:
-raise
+Assuming a function `get_audit
