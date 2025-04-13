@@ -43,6 +43,17 @@ customer_id = Column(Integer, ForeignKey('customers.id'))
 billing_option = Column(String)   Example field for billing options
 team_assignment = Column(String)   Example field for team assignments
 customer = relationship("Customer", back_populates="projects")
+New Task model
+class Task(Base):
+__tablename__ = 'tasks'
+id = Column(Integer, primary_key=True, index=True)
+project_id = Column(Integer, ForeignKey('projects.id'))
+name = Column(String, index=True)
+status = Column(String)   Example field for task status
+time_spent = Column(Float)   Example field for time spent on task
+project = relationship("Project", back_populates="tasks")
+Add relationship to Project model
+Project.tasks = relationship("Task", order_by="Task.id", back_populates="project")
 Dependency to get the database session
 def get_db():
 db = SessionLocal()
