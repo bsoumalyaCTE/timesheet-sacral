@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.engine.url import quote_plus
@@ -30,15 +30,16 @@ __tablename__ = 'customers'
 id = Column(Integer, primary_key=True, index=True)
 name = Column(String, index=True)
 Add any other fields relevant to the Customer model
+projects = relationship("Project", order_by="Project.id", back_populates="customer")
 New Project model
 class Project(Base):
 __tablename__ = 'projects'
 id = Column(Integer, primary_key=True, index=True)
 name = Column(String, index=True)
 customer_id = Column(Integer, ForeignKey('customers.id'))
+billing_option = Column(String)   Example field for billing options
+team_assignment = Column(String)   Example field for team assignments
 customer = relationship("Customer", back_populates="projects")
-Establishing the relationship in the Customer model
-Customer.projects = relationship("Project", order_by=Project.id, back_populates="customer")
 Dependency to get the database session
 def get_db():
 db = SessionLocal()
