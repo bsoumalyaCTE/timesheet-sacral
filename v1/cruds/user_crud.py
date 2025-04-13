@@ -54,7 +54,8 @@ created=user.created,
 is_enabled=user.is_enabled,
 is_locked=user.is_locked,
 last_sync_time=None,
-sync_status=None
+sync_status=None,
+role='Viewer'   Default role
 )
 db.add(new_user)
 db.commit()
@@ -240,3 +241,6 @@ db.commit()
 return {"message": "Role assigned successfully"}
 except Exception as e:
 raise HTTPException(status_code=400, detail=str(e))
+New function to get available roles
+def get_user_roles():
+return ['Project Manager', 'Team Member', 'Viewer']
