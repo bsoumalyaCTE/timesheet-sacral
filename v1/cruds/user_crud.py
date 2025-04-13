@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, status, BackgroundTasks
 from configs.database import get_db
 from configs.schemas.user_schema import signUpModel
-from configs.models import User, Project, Customer, ProjectTeam   Assuming ProjectTeam model exists
+from configs.models import User, Project, Customer, ProjectTeam, AuditTrail   Assuming ProjectTeam and AuditTrail models exist
 from lib.helper import get_password_hash
 from datetime import datetime, timedelta
 import asyncio   Import asyncio for asynchronous tasks
