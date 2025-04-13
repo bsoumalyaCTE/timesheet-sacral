@@ -71,6 +71,11 @@ response_description="List of all users.")
 async def get_all_users(db=Depends(get_db), Authorize: AuthJWT = Depends(), eligible_for_project: bool = False):
 try:
 Authorize.jwt_required()
+Check user role and permissions
+current_user = Authorize.get_jwt_subject()
+user_roles = Authorize.get_raw_jwt().get("roles", [])
+if "admin" not in user_roles:
+raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to view user information.")
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid or expired.")
 Modify the query to filter users based on eligibility for project assignment
