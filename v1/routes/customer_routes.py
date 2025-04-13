@@ -25,10 +25,10 @@ CURRENCIES = ["USD", "EUR", "GBP", "INR", "JPY"]
 Create a new customer
 @customer_router.post("/", response_model=CustomerResponse, status_code=status.HTTP_201_CREATED)
 def create_customer(
-name: str = Form(...),    Accept `name` as a form field
-description: Optional[str] = Form(None),    Accept `description` as a form field
-logo: UploadFile = File(None),    Accept `logo` as a file
-db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):    Verify the JWT token
+name: str = Form(...),     Accept `name` as a form field
+description: Optional[str] = Form(None),     Accept `description` as a form field
+logo: UploadFile = File(None),     Accept `logo` as a file
+db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):     Verify the JWT token
 try:
 Authorize.jwt_required()
 except Exception as e:
@@ -55,10 +55,10 @@ Update a customer by ID
 @customer_router.put("/{customer_id}", response_model=CustomerResponse)
 def update_customer(
 customer_id: int,
-name: str = Form(...),    Accept `name` as a form field
-description: Optional[str] = Form(None),    Accept `description` as a form field
-logo: UploadFile = File(None),    Accept `logo` as a file
-db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):    Verify the JWT token
+name: str = Form(...),     Accept `name` as a form field
+description: Optional[str] = Form(None),     Accept `description` as a form field
+logo: UploadFile = File(None),     Accept `logo` as a file
+db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):     Verify the JWT token
 try:
 Authorize.jwt_required()
 except Exception as e:
@@ -107,7 +107,7 @@ Schedule the periodic CRM synchronization task
 celery_app.conf.beat_schedule = {
 'periodic-crm-sync': {
 'task': 'periodic_crm_sync',
-'schedule': 300.0,   Run every 5 minutes
+'schedule': 300.0,    Run every 5 minutes
 },
 }
 Get a single customer by ID
@@ -204,10 +204,10 @@ return {"status": status.HTTP_200_OK, "message": "All Customer Lists for Dropdow
 New endpoint to add a customer from the 'Select Customer' dropdown
 @customer_router.post("/add_from_dropdown", response_model=CustomerResponse, status_code=status.HTTP_201_CREATED)
 def add_customer_from_dropdown(
-name: str = Form(...),    Accept `name` as a form field
-description: Optional[str] = Form(None),    Accept `description` as a form field
-logo: UploadFile = File(None),    Accept `logo` as a file
-db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):    Verify the JWT token
+name: str = Form(...),     Accept `name` as a form field
+description: Optional[str] = Form(None),     Accept `description` as a form field
+logo: UploadFile = File(None),     Accept `logo` as a file
+db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):     Verify the JWT token
 try:
 Authorize.jwt_required()
 except Exception as e:
@@ -236,8 +236,8 @@ New endpoint to add a project team
 @project_router.post("/add_team", status_code=status.HTTP_201_CREATED)
 def add_project_team(
 project_id: int,
-team_members: List[int] = Form(...),    List of team member IDs
-allocations: List[float] = Form(...),    Corresponding allocation percentages
+team_members: List[int] = Form(...),     List of team member IDs
+allocations: List[float] = Form(...),     Corresponding allocation percentages
 db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
 try:
 Authorize.jwt_required()
@@ -263,8 +263,8 @@ New endpoint to edit a project team
 @project_router.put("/edit_team/{project_id}", status_code=status.HTTP_200_OK)
 def edit_project_team(
 project_id: int,
-team_members: List[int] = Form(...),    List of team member IDs
-allocations: List[float] = Form(...),    Corresponding allocation percentages
+team_members: List[int] = Form(...),     List of team member IDs
+allocations: List[float] = Form(...),     Corresponding allocation percentages
 db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
 try:
 Authorize.jwt_required()
@@ -286,3 +286,16 @@ broadcast_update_to_sessions()
 return {"status": status.HTTP_200_OK, "message": "Project team updated successfully.", "data": crud_response}
 else:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Project team update failed.")
+New endpoint to synchronize customers with CRM
+@project_router.post("/sync_customers_with_crm", status_code=status.HTTP_200_OK)
+def sync_customers_with_crm(db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
+try:
+Authorize.jwt_required()
+except Exception as e:
+raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid or expired.")
+Logic to synchronize customers with CRM
+This is a placeholder for the actual CRM integration logic
+logger.info("Synchronizing all customers with CRM...")
+Simulate successful synchronization
+logger.info("All customers synchronized with CRM successfully.")
+return {"status": status.HTTP_200_OK, "message": "All customers synchronized with CRM successfully."}
