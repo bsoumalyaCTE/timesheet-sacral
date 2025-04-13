@@ -61,10 +61,18 @@ return {"status": status.HTTP_200_OK, "message": "Access token refreshed success
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired refresh token.")
 @user_router.post("/logout", tags=["Users"], summary="Logout User", description="Logout the user by invalidating tokens.")
-async def logout_user(Authorize: AuthJWT = Depends()):
+async def logout_user(Authorize: AuthJWT = Depends(), db=Depends(get_db)):
 try:
 Authorize.jwt_required()
+current_user = Authorize.get_jwt_subject()
+Ensure MFA is completed before logout
+if not MFAService().is_mfa_completed(current_user):
+raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="MFA not completed.")
+Invalidate tokens securely
 Authorize.unset_jwt_cookies()
+Log the logout event for audit purposes
+audit_log = AuditLog(db)
+audit_log.record_logout(current_user)
 return {"status": status.HTTP_200_OK, "message": "User logged out successfully."}
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token.")
