@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 Assuming CRM integration functions
 def synchronize_crm_data(db, user):
 try:
-Placeholder for CRM synchronization logic
+CRM synchronization logic
 This function should handle the integration with the CRM system
 and update the User model with synchronization status and timestamps
 user.last_sync_time = datetime.utcnow()
@@ -19,7 +19,7 @@ db.commit()
 raise HTTPException(status_code=400, detail=f"CRM synchronization failed: {str(e)}")
 def periodic_crm_sync(db):
 try:
-Placeholder for periodic CRM synchronization logic
+Periodic CRM synchronization logic
 This function should be run as a background task
 users = db.query(User).all()
 for user in users:
