@@ -12,6 +12,7 @@ import shutil
 from celery import Celery
 import logging
 from typing import List, Optional
+from some_mfa_library import verify_mfa   Assuming this is the MFA library
 Directory to save uploaded files
 UPLOAD_DIR = "uploads/customers/"
 Ensure the upload directory exists
@@ -41,9 +42,17 @@ def create_customer(
 name: str = Form(...),   Accept `name` as a form field
 description: Optional[str] = Form(None),   Accept `description` as a form field
 logo: UploadFile = File(None),   Accept `logo` as a file
+mfa_token: str = Form(...),   Accept MFA token
 db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):   Verify the JWT token
 try:
 Authorize.jwt_required()
+Verify MFA token
+if not verify_mfa(mfa_token):
+raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid MFA token.")
+Check user role
+check_user_role("Project Manager", Authorize)
+except HTTPException as e:
+raise e
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid or expired.")
 Save the uploaded image file if provided
@@ -363,8 +372,4 @@ Log the role assignment action for audit trail
 log_audit_trail("Assign Role", Authorize.get_jwt_subject(), f"Assigned role {role} to user ID: {user_id} in project ID: {project_id}")
 return {"status": status.HTTP_200_OK, "message": "Role assigned successfully.", "data": crud_response}
 else:
-raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Role assignment failed.")
-New endpoint to view audit trail
-@project_router.get("/audit_trail", status_code=status.HTTP_200_OK)
-def view_audit_trail(db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
-try:
+raise
