@@ -216,7 +216,7 @@ return {"message": "Project team updated successfully"}
 except Exception as e:
 raise HTTPException(status_code=400, detail=str(e))
 New function for role assignment
-def assign_role_to_user(db, project_manager_id, user_id, role):
+def assign_role_to_user_crud(db, project_manager_id, user_id, role):
 try:
 Verify if the user is a project manager
 project_manager = db.query(User).filter(User.id == project_manager_id).first()
