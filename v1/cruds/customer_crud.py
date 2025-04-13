@@ -82,7 +82,7 @@ sync_with_crm(db)
 return new_customer
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-def list_customers_crud(db: Session, page: int = 1, page_size: int = 10, filter: Optional[str] = None):
+def list_customers_crud(db: Session, page: int = 1, page_size: int = 10, filter: Optional[str] = None, anonymize: bool = False):
 try:
 query = db.query(Customer)
 if filter:
@@ -91,11 +91,13 @@ total_customers = query.count()
 customers = query.offset((page - 1) * page_size).limit(page_size).all()
 if not customers:
 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No customers found")
+def anonymize_data(data):
+return "Anonymized" if anonymize else decrypt_data(data)
 return {
 "total": total_customers,
 "page": page,
 "page_size": page_size,
-"customers": [{"id": c.id, "name": decrypt_data(c.name), "description": decrypt_data(c.description)} for c in customers]
+"customers": [{"id": c.id, "name": anonymize_data(c.name), "description": anonymize_data(c.description)} for c in customers]
 }
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -148,12 +150,14 @@ db.commit()
 return {"message": "Customer deleted successfully"}
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-def list_customers_name(db: Session):
+def list_customers_name(db: Session, anonymize: bool = False):
 try:
 customers = db.query(Customer).all()
 if not customers:
 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No customers found")
-customer_names = [{"id": customer.id, "name": decrypt_data(customer.name)} for customer in customers]
+def anonymize_data(data):
+return "Anonymized" if anonymize else decrypt_data(data)
+customer_names = [{"id": customer.id, "name": anonymize_data(customer.name)} for customer in customers]
 return customer_names
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
