@@ -7,11 +7,10 @@ from v1.cruds.project_crud import *
 from v1.cruds.crm_integration import *
 from v1.services.role_service import RoleService
 from v1.models.audit_log import AuditLog
+from v1.services.mfa_service import MFAService   Assuming there's an MFA service
 user_router = APIRouter(prefix="/user", tags=["Users"])
 @AuthJWT.load_config
 def get_config():
-Enhance this function to include multi-factor authentication options
-and role-based access control configurations
 class Settings:
 authjwt_secret_key: str = "your_secret_key"
 authjwt_denylist_enabled: bool = True
@@ -40,7 +39,13 @@ response_description="User logged in successfully.")
 async def login_user(user: loginModel, Authorize: AuthJWT = Depends(), db=Depends(get_db)):
 crud_response = login_user_crud(db, user, Authorize)
 if crud_response:
-return {"status": status.HTTP_200_OK, "message": "User logged in successfully.", "data": crud_response}
+Initiate MFA process
+mfa_service = MFAService()
+mfa_response = mfa_service.initiate_mfa(user.email)
+if mfa_response:
+return {"status": status.HTTP_200_OK, "message": "MFA initiated. Please verify.", "data": crud_response}
+else:
+raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="MFA initiation failed.")
 else:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials.")
 @user_router.post("/refresh", tags=["Users"], summary="Refresh Token", description="Generate a new access token using the refresh token.")
