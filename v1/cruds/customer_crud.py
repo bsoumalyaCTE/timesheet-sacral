@@ -139,16 +139,22 @@ raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 def delete_customer_crud(db: Session, customer_id: int):
 try:
 customer = db.query(Customer).filter(Customer.id == customer_id).first()
+if not customer:
+raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer not found")
+Securely delete the logo file if it exists
 if customer.logo:
 existing_logo_path = os.path.join(UPLOAD_DIR, customer.logo)
 if os.path.exists(existing_logo_path):
+try:
 os.remove(existing_logo_path)
-if not customer:
-raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer not found")
+except Exception as e:
+logging.error(f"Failed to delete logo file: {str(e)}")
+raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete logo file")
 db.delete(customer)
 db.commit()
 return {"message": "Customer deleted successfully"}
 except Exception as e:
+logging.error(f"Failed to delete customer: {str(e)}")
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 def list_customers_name(db: Session, anonymize: bool = False):
 try:
