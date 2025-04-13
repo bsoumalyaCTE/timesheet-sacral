@@ -87,6 +87,43 @@ else:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Project update failed.")
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized access.")
+New endpoints for role-based access control
+@user_router.post("/projects/{project_id}/assign_role", tags=["Projects"], summary="Assign Role", description="Assign a role to a user in a project.")
+async def assign_role(project_id: int, role_assignment: RoleAssignmentModel, db=Depends(get_db), Authorize: AuthJWT = Depends()):
+try:
+Authorize.jwt_required()
+Logic to assign role to user
+crud_response = assign_role_crud(db, project_id, role_assignment)
+if crud_response:
+return {"status": status.HTTP_200_OK, "message": "Role assigned successfully.", "data": crud_response}
+else:
+raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Role assignment failed.")
+except Exception as e:
+raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized access.")
+@user_router.get("/projects/{project_id}/roles", tags=["Projects"], summary="View Roles", description="View roles assigned to users in a project.")
+async def view_roles(project_id: int, db=Depends(get_db), Authorize: AuthJWT = Depends()):
+try:
+Authorize.jwt_required()
+Logic to view roles
+roles_data = view_roles_crud(db, project_id)
+if roles_data:
+return {"status": status.HTTP_200_OK, "message": "Roles retrieved successfully.", "data": roles_data}
+else:
+raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No roles found.")
+except Exception as e:
+raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized access.")
+@user_router.get("/projects/{project_id}/audit_trail", tags=["Projects"], summary="Audit Trail", description="View audit trail of role assignments.")
+async def view_audit_trail(project_id: int, db=Depends(get_db), Authorize: AuthJWT = Depends()):
+try:
+Authorize.jwt_required()
+Logic to view audit trail
+audit_trail_data = view_audit_trail_crud(db, project_id)
+if audit_trail_data:
+return {"status": status.HTTP_200_OK, "message": "Audit trail retrieved successfully.", "data": audit_trail_data}
+else:
+raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No audit trail found.")
+except Exception as e:
+raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized access.")
 New endpoints for CRM integration
 @user_router.post("/crm/sync", tags=["CRM"], summary="Initiate CRM Synchronization", description="Initiate synchronization with the CRM system.")
 async def initiate_crm_sync(db=Depends(get_db), Authorize: AuthJWT = Depends()):
