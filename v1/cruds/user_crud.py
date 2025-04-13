@@ -215,3 +215,28 @@ db.commit()
 return {"message": "Project team updated successfully"}
 except Exception as e:
 raise HTTPException(status_code=400, detail=str(e))
+New function for role assignment
+def assign_role_to_user(db, project_manager_id, user_id, role):
+try:
+Verify if the user is a project manager
+project_manager = db.query(User).filter(User.id == project_manager_id).first()
+if not project_manager or project_manager.role != 'Project Manager':
+raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only project managers can assign roles")
+Assign role to user
+user = db.query(User).filter(User.id == user_id).first()
+if not user:
+raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+user.role = role
+db.commit()
+Create an entry in the audit trail
+Assuming an AuditTrail model exists
+audit_entry = AuditTrail(
+user_id=user_id,
+action=f"Role assigned: {role}",
+timestamp=datetime.utcnow()
+)
+db.add(audit_entry)
+db.commit()
+return {"message": "Role assigned successfully"}
+except Exception as e:
+raise HTTPException(status_code=400, detail=str(e))
