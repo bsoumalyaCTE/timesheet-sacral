@@ -2,17 +2,16 @@ from fastapi import APIRouter, HTTPException, Depends, status, BackgroundTasks
 from sqlalchemy.orm import Session
 from configs.database import get_db
 from configs.schemas.customer_schema import *
-from configs.models import Customer, Project, ProjectTeamMember   Assuming these models exist
+from configs.models import Customer, Project, ProjectTeamMember, ProjectRole, AuditTrail   Assuming these models exist
 from datetime import datetime, date
 import os
-import requests   Import requests to handle HTTP requests for CRM integration
-import logging   Import logging to log synchronization events
+import requests
+import logging
 from fastapi.security import OAuth2PasswordBearer
 from typing import List
 UPLOAD_DIR = "uploads/customers/"
-PREDEFINED_CURRENCIES = ["USD", "EUR", "GBP", "INR"]   Example list of predefined currencies
+PREDEFINED_CURRENCIES = ["USD", "EUR", "GBP", "INR"]
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-Mock function to get current user role
 def get_current_user_role(token: str = Depends(oauth2_scheme)):
 This function should return the role of the current user based on the token
 For example, it could return 'Project Manager', 'Team Member', or 'Viewer'
@@ -23,7 +22,6 @@ For example, it could send a message to a WebSocket or trigger a server-sent eve
 pass
 def sync_with_crm(db: Session):
 try:
-Example CRM API endpoint
 crm_api_url = "https://example-crm.com/api/customers"
 response = requests.get(crm_api_url)
 if response.status_code != 200:
@@ -32,13 +30,11 @@ crm_customers = response.json()
 for crm_customer in crm_customers:
 existing_customer = db.query(Customer).filter(Customer.name == crm_customer['name']).first()
 if existing_customer:
-Update existing customer
 existing_customer.description = crm_customer['description']
 existing_customer.logo = crm_customer['logo']
 existing_customer.hourly_rate = crm_customer['hourly_rate']
 existing_customer.currency = crm_customer['currency']
 else:
-Add new customer
 new_customer = Customer(
 name=crm_customer['name'],
 description=crm_customer['description'],
@@ -49,7 +45,6 @@ currency=crm_customer['currency']
 )
 db.add(new_customer)
 db.commit()
-Log synchronization success
 logging.info("CRM synchronization completed successfully.")
 return {"message": "CRM synchronization completed successfully"}
 except Exception as e:
@@ -57,11 +52,9 @@ logging.error(f"CRM synchronization failed: {str(e)}")
 raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 def create_customer_crud(db: Session, customer):
 try:
-Check if the customer with the same name already exists
 existing_customer = db.query(Customer).filter(Customer.name == customer.name).first()
 if existing_customer:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Customer already exists")
-Validate currency
 if customer.currency not in PREDEFINED_CURRENCIES:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid currency selected")
 new_customer = Customer(
@@ -69,15 +62,13 @@ name=customer.name,
 description=customer.description,
 logo=customer.logo,
 create_timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-hourly_rate=customer.hourly_rate,   New field for hourly rate
-currency=customer.currency   New field for currency
+hourly_rate=customer.hourly_rate,
+currency=customer.currency
 )
 db.add(new_customer)
 db.commit()
 db.refresh(new_customer)
-Notify the client-side about the new customer addition
 notify_customer_addition(new_customer)
-Initiate synchronization with CRM
 sync_with_crm(db)
 return new_customer
 except Exception as e:
@@ -92,7 +83,6 @@ except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 def get_customer_crud(db: Session, customer_id: int):
 try:
-Ensure data is up-to-date by triggering synchronization if needed
 sync_with_crm(db)
 customer = db.query(Customer).filter(Customer.id == customer_id).first()
 if not customer:
@@ -109,21 +99,17 @@ if not existing_customer:
 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer not found")
 existing_customer.name = customer.name
 existing_customer.description = customer.description
-If logo is provided, update it
 if customer.logo:
 existing_customer.logo = customer.logo
-Update hourly rate
 if customer.hourly_rate is not None:
-if customer.hourly_rate < 0 or customer.hourly_rate > 1000:   Example validation range
+if customer.hourly_rate < 0 or customer.hourly_rate > 1000:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Hourly rate must be between 0 and 1000")
 existing_customer.hourly_rate = customer.hourly_rate
-Validate and update currency
 if customer.currency not in PREDEFINED_CURRENCIES:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid currency selected")
 existing_customer.currency = customer.currency
 db.commit()
 db.refresh(existing_customer)
-Log the update for audit trail
 logging.info(f"Customer {customer_id} updated by {current_user_role}")
 return existing_customer
 except Exception as e:
@@ -161,11 +147,9 @@ except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 def add_customer_crud(db: Session, customer):
 try:
-Check if the customer with the same name already exists
 existing_customer = db.query(Customer).filter(Customer.name == customer.name).first()
 if existing_customer:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Customer already exists")
-Validate currency
 if customer.currency not in PREDEFINED_CURRENCIES:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid currency selected")
 new_customer = Customer(
@@ -173,18 +157,16 @@ name=customer.name,
 description=customer.description,
 logo=customer.logo,
 create_timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-hourly_rate=customer.hourly_rate,   New field for hourly rate
-currency=customer.currency   New field for currency
+hourly_rate=customer.hourly_rate,
+currency=customer.currency
 )
 db.add(new_customer)
 db.commit()
 db.refresh(new_customer)
-Notify the client-side about the new customer addition
 notify_customer_addition(new_customer)
 return new_customer
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-New function to fetch customers for dropdown
 def get_customers_for_dropdown(db: Session):
 try:
 customers = db.query(Customer).all()
@@ -193,20 +175,16 @@ raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No customers 
 return [{"id": customer.id, "name": customer.name} for customer in customers]
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-New function to assign project teams
 def assign_project_team_crud(db: Session, project_id: int, team_members: List[dict]):
 try:
-Fetch the project
 project = db.query(Project).filter(Project.id == project_id).first()
 if not project:
 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
-Validate and assign team members
 total_allocation = 0
 for member in team_members:
 total_allocation += member['allocation_percentage']
 if total_allocation > 100:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Total allocation percentage exceeds 100%")
-Add or update team member
 existing_member = db.query(ProjectTeamMember).filter(
 ProjectTeamMember.project_id == project_id,
 ProjectTeamMember.user_id == member['user_id']
@@ -224,10 +202,8 @@ db.commit()
 return {"message": "Project team assigned successfully"}
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-New function to synchronize customers from CRM
 def sync_customers_from_crm(db: Session):
 try:
-Example CRM API endpoint
 crm_api_url = "https://example-crm.com/api/customers"
 response = requests.get(crm_api_url)
 if response.status_code != 200:
@@ -236,13 +212,11 @@ crm_customers = response.json()
 for crm_customer in crm_customers:
 existing_customer = db.query(Customer).filter(Customer.name == crm_customer['name']).first()
 if existing_customer:
-Update existing customer
 existing_customer.description = crm_customer['description']
 existing_customer.logo = crm_customer['logo']
 existing_customer.hourly_rate = crm_customer['hourly_rate']
 existing_customer.currency = crm_customer['currency']
 else:
-Add new customer
 new_customer = Customer(
 name=crm_customer['name'],
 description=crm_customer['description'],
@@ -253,13 +227,56 @@ currency=crm_customer['currency']
 )
 db.add(new_customer)
 db.commit()
-Log synchronization success
 logging.info("CRM synchronization completed successfully.")
 return {"message": "CRM synchronization completed successfully"}
 except Exception as e:
 logging.error(f"CRM synchronization failed: {str(e)}")
 raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
-New function to handle background synchronization
 def synchronize_customer_data(db: Session, background_tasks: BackgroundTasks):
 background_tasks.add_task(sync_with_crm, db)
 return {"message": "Synchronization task has been scheduled."}
+New functions for managing project roles and audit trail
+def create_project_role_crud(db: Session, project_id: int, user_id: int, role: str, current_user_role: str = Depends(get_current_user_role)):
+try:
+if current_user_role not in ['Project Manager']:
+raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to assign roles")
+new_role = ProjectRole(
+project_id=project_id,
+user_id=user_id,
+role=role
+)
+db.add(new_role)
+db.commit()
+log_audit_trail(db, project_id, user_id, role, "Assigned")
+return {"message": "Role assigned successfully"}
+except Exception as e:
+raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+def update_project_role_crud(db: Session, project_id: int, user_id: int, role: str, current_user_role: str = Depends(get_current_user_role)):
+try:
+if current_user_role not in ['Project Manager']:
+raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to update roles")
+existing_role = db.query(ProjectRole).filter(
+ProjectRole.project_id == project_id,
+ProjectRole.user_id == user_id
+).first()
+if not existing_role:
+raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Role not found")
+existing_role.role = role
+db.commit()
+log_audit_trail(db, project_id, user_id, role, "Updated")
+return {"message": "Role updated successfully"}
+except Exception as e:
+raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+def log_audit_trail(db: Session, project_id: int, user_id: int, role: str, action: str):
+try:
+audit_entry = AuditTrail(
+project_id=project_id,
+user_id=user_id,
+role=role,
+action=action,
+timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+)
+db.add(audit_entry)
+db.commit()
+except Exception as e:
+logging.error(f"Failed to log audit trail: {str(e)}")
