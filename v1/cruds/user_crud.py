@@ -40,14 +40,14 @@ raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username al
 new_user = User(
 username=user.username,
 password=get_password_hash(user.password),
-first_name=user.first_name,
-middle_name=user.middle_name,
-last_name=user.last_name,
-email=user.email,
-phone=user.phone,
-fax=user.fax,
-mobile=user.mobile,
-other_contact=user.other_contact,
+first_name=encrypt_data(user.first_name),
+middle_name=encrypt_data(user.middle_name),
+last_name=encrypt_data(user.last_name),
+email=encrypt_data(user.email),
+phone=encrypt_data(user.phone),
+fax=encrypt_data(user.fax),
+mobile=encrypt_data(user.mobile),
+other_contact=encrypt_data(user.other_contact),
 workday_duration=user.workday_duration,
 hire_date=user.hire_date,
 created=user.created,
@@ -100,7 +100,23 @@ for user in users:
 current_allocation = db.query(ProjectTeam).filter(ProjectTeam.user_id == user.id).all()
 total_allocation = sum([team.allocation for team in current_allocation])
 user_data.append({
-"user": user,
+"user": {
+"username": user.username,
+"first_name": decrypt_data(user.first_name),
+"middle_name": decrypt_data(user.middle_name),
+"last_name": decrypt_data(user.last_name),
+"email": decrypt_data(user.email),
+"phone": decrypt_data(user.phone),
+"fax": decrypt_data(user.fax),
+"mobile": decrypt_data(user.mobile),
+"other_contact": decrypt_data(user.other_contact),
+"workday_duration": user.workday_duration,
+"hire_date": user.hire_date,
+"created": user.created,
+"is_enabled": user.is_enabled,
+"is_locked": user.is_locked,
+"role": user.role
+},
 "current_allocation": total_allocation
 })
 return user_data
