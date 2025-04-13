@@ -9,6 +9,7 @@ import os
 import shutil
 from celery import Celery
 import logging
+from typing import List, Optional
 Directory to save uploaded files
 UPLOAD_DIR = "uploads/customers/"
 Ensure the upload directory exists
@@ -22,13 +23,23 @@ customer_router = APIRouter(prefix="/customer", tags=["Customers"])
 project_router = APIRouter(prefix="/project", tags=["Projects"])
 Predefined list of currencies
 CURRENCIES = ["USD", "EUR", "GBP", "INR", "JPY"]
+Role-based access control
+ROLES = ["Project Manager", "Team Member", "Viewer"]
+Function to check if the user has the required role
+def check_user_role(required_role: str, Authorize: AuthJWT):
+user_roles = Authorize.get_raw_jwt().get("roles", [])
+if required_role not in user_roles:
+raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient role permissions.")
+Function to log actions for audit trail
+def log_audit_trail(action: str, user_id: int, details: str):
+logger.info(f"Audit Trail - Action: {action}, User ID: {user_id}, Details: {details}")
 Create a new customer
 @customer_router.post("/", response_model=CustomerResponse, status_code=status.HTTP_201_CREATED)
 def create_customer(
-name: str = Form(...),    Accept `name` as a form field
-description: Optional[str] = Form(None),    Accept `description` as a form field
-logo: UploadFile = File(None),    Accept `logo` as a file
-db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):    Verify the JWT token
+name: str = Form(...),   Accept `name` as a form field
+description: Optional[str] = Form(None),   Accept `description` as a form field
+logo: UploadFile = File(None),   Accept `logo` as a file
+db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):   Verify the JWT token
 try:
 Authorize.jwt_required()
 except Exception as e:
@@ -65,12 +76,15 @@ Update a customer by ID
 @customer_router.put("/{customer_id}", response_model=CustomerResponse)
 def update_customer(
 customer_id: int,
-name: str = Form(...),    Accept `name` as a form field
-description: Optional[str] = Form(None),    Accept `description` as a form field
-logo: UploadFile = File(None),    Accept `logo` as a file
-db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):    Verify the JWT token
+name: str = Form(...),   Accept `name` as a form field
+description: Optional[str] = Form(None),   Accept `description` as a form field
+logo: UploadFile = File(None),   Accept `logo` as a file
+db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):   Verify the JWT token
 try:
 Authorize.jwt_required()
+check_user_role("Project Manager", Authorize)
+except HTTPException as e:
+raise e
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid or expired.")
 Save the uploaded image file if provided
@@ -95,6 +109,8 @@ description=description
 crud_response = update_customer_crud(db, customer_id, customer_data)
 if not crud_response:
 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer not found")
+Log the update action for audit trail
+log_audit_trail("Update Customer", Authorize.get_jwt_subject(), f"Updated customer ID: {customer_id}")
 Call the synchronization function after updating the customer
 synchronize_customer_data.delay(customer_id)
 return {"status": status.HTTP_200_OK, "message": "Customer record updated successfully.", "data": crud_response}
@@ -109,7 +125,7 @@ Schedule the periodic CRM synchronization task
 celery_app.conf.beat_schedule = {
 'periodic-crm-sync': {
 'task': 'periodic_crm_sync',
-'schedule': 300.0,    Run every 5 minutes
+'schedule': 300.0,   Run every 5 minutes
 },
 }
 Get a single customer by ID
@@ -208,10 +224,10 @@ return {"status": status.HTTP_200_OK, "message": "All Customer Lists for Dropdow
 New endpoint to add a customer from the 'Select Customer' dropdown
 @customer_router.post("/add_from_dropdown", response_model=CustomerResponse, status_code=status.HTTP_201_CREATED)
 def add_customer_from_dropdown(
-name: str = Form(...),    Accept `name` as a form field
-description: Optional[str] = Form(None),    Accept `description` as a form field
-logo: UploadFile = File(None),    Accept `logo` as a file
-db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):    Verify the JWT token
+name: str = Form(...),   Accept `name` as a form field
+description: Optional[str] = Form(None),   Accept `description` as a form field
+logo: UploadFile = File(None),   Accept `logo` as a file
+db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):   Verify the JWT token
 try:
 Authorize.jwt_required()
 except Exception as e:
@@ -240,8 +256,8 @@ New endpoint to add a project team
 @project_router.post("/add_team", status_code=status.HTTP_201_CREATED)
 def add_project_team(
 project_id: int,
-team_members: List[int] = Form(...),    List of team member IDs
-allocations: List[float] = Form(...),    Corresponding allocation percentages
+team_members: List[int] = Form(...),   List of team member IDs
+allocations: List[float] = Form(...),   Corresponding allocation percentages
 db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
 try:
 Authorize.jwt_required()
@@ -267,8 +283,8 @@ New endpoint to edit a project team
 @project_router.put("/edit_team/{project_id}", status_code=status.HTTP_200_OK)
 def edit_project_team(
 project_id: int,
-team_members: List[int] = Form(...),    List of team member IDs
-allocations: List[float] = Form(...),    Corresponding allocation percentages
+team_members: List[int] = Form(...),   List of team member IDs
+allocations: List[float] = Form(...),   Corresponding allocation percentages
 db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
 try:
 Authorize.jwt_required()
