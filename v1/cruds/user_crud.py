@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends, status, BackgroundTasks
 from configs.database import get_db
 from configs.schemas.user_schema import signUpModel
 from configs.models import User, Project, Customer, ProjectTeam, AuditTrail   Assuming ProjectTeam and AuditTrail models exist
-from lib.helper import get_password_hash
+from lib.helper import get_password_hash, verify_mfa, encrypt_data, decrypt_data   Assuming these functions exist
 from datetime import datetime, timedelta
 import asyncio   Import asyncio for asynchronous tasks
 Assuming CRM integration functions
@@ -73,14 +73,19 @@ if db_user.is_locked:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User is locked")
 if not db_user.is_enabled:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User is disabled")
+Check if MFA is enabled and verify
+if db_user.mfa_enabled:
+if not verify_mfa(user.mfa_token):
+raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="MFA verification failed")
 Synchronize CRM data after successful login
 asyncio.run(synchronize_user_with_crm(db, db_user))
 Add background task for periodic CRM synchronization
 background_tasks.add_task(periodic_crm_sync, db)
+Create and encrypt access and refresh tokens
 access_token = Authorize.create_access_token(subject=db_user.username, fresh=True, expires_time=3600)
 refresh_token = Authorize.create_refresh_token(subject=db_user.username)
-db_user.access_token = access_token
-db_user.refresh_token = refresh_token
+db_user.access_token = encrypt_data(access_token)
+db_user.refresh_token = encrypt_data(refresh_token)
 return db_user
 except Exception as e:
 raise HTTPException(status_code=400, detail=str(e))
