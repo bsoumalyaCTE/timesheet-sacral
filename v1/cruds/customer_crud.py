@@ -11,10 +11,10 @@ import logging
 from fastapi.security import OAuth2PasswordBearer
 from typing import List, Optional
 from cryptography.fernet import Fernet
+from functools import lru_cache
 UPLOAD_DIR = "uploads/customers/"
 PREDEFINED_CURRENCIES = ["USD", "EUR", "GBP", "INR"]
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-Encryption key (in a real-world scenario, this should be securely stored and managed)
 ENCRYPTION_KEY = b'your-encryption-key-here'   Replace with your actual key
 cipher = Fernet(ENCRYPTION_KEY)
 def encrypt_data(data: str) -> str:
@@ -82,6 +82,7 @@ sync_with_crm(db)
 return new_customer
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+@lru_cache(maxsize=128)
 def list_customers_crud(db: Session, page: int = 1, page_size: int = 10, filter: Optional[str] = None, anonymize: bool = False):
 try:
 query = db.query(Customer)
@@ -156,15 +157,22 @@ return {"message": "Customer deleted successfully"}
 except Exception as e:
 logging.error(f"Failed to delete customer: {str(e)}")
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-def list_customers_name(db: Session, anonymize: bool = False):
+def list_customers_name(db: Session, page: int = 1, page_size: int = 10, anonymize: bool = False):
 try:
-customers = db.query(Customer).all()
+query = db.query(Customer)
+total_customers = query.count()
+customers = query.offset((page - 1) * page_size).limit(page_size).all()
 if not customers:
 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No customers found")
 def anonymize_data(data):
 return "Anonymized" if anonymize else decrypt_data(data)
 customer_names = [{"id": customer.id, "name": anonymize_data(customer.name)} for customer in customers]
-return customer_names
+return {
+"total": total_customers,
+"page": page,
+"page_size": page_size,
+"customers": customer_names
+}
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 def get_all_customers_crud(db: Session):
