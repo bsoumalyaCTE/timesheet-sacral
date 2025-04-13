@@ -13,6 +13,40 @@ def notify_customer_addition(customer):
 This function should contain the logic to notify the client-side about the new customer addition.
 For example, it could send a message to a WebSocket or trigger a server-sent event.
 pass
+def sync_with_crm(db: Session):
+try:
+Example CRM API endpoint
+crm_api_url = "https://example-crm.com/api/customers"
+response = requests.get(crm_api_url)
+if response.status_code != 200:
+raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to fetch data from CRM")
+crm_customers = response.json()
+for crm_customer in crm_customers:
+existing_customer = db.query(Customer).filter(Customer.name == crm_customer['name']).first()
+if existing_customer:
+Update existing customer
+existing_customer.description = crm_customer['description']
+existing_customer.logo = crm_customer['logo']
+existing_customer.hourly_rate = crm_customer['hourly_rate']
+existing_customer.currency = crm_customer['currency']
+else:
+Add new customer
+new_customer = Customer(
+name=crm_customer['name'],
+description=crm_customer['description'],
+logo=crm_customer['logo'],
+create_timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+hourly_rate=crm_customer['hourly_rate'],
+currency=crm_customer['currency']
+)
+db.add(new_customer)
+db.commit()
+Log synchronization success
+logging.info("CRM synchronization completed successfully.")
+return {"message": "CRM synchronization completed successfully"}
+except Exception as e:
+logging.error(f"CRM synchronization failed: {str(e)}")
+raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 def create_customer_crud(db: Session, customer):
 try:
 Check if the customer with the same name already exists
@@ -35,6 +69,8 @@ db.commit()
 db.refresh(new_customer)
 Notify the client-side about the new customer addition
 notify_customer_addition(new_customer)
+Initiate synchronization with CRM
+sync_with_crm(db)
 return new_customer
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
