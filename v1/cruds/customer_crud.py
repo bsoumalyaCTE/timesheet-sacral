@@ -10,9 +10,17 @@ import requests
 import logging
 from fastapi.security import OAuth2PasswordBearer
 from typing import List, Optional
+from cryptography.fernet import Fernet
 UPLOAD_DIR = "uploads/customers/"
 PREDEFINED_CURRENCIES = ["USD", "EUR", "GBP", "INR"]
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+Encryption key (in a real-world scenario, this should be securely stored and managed)
+ENCRYPTION_KEY = b'your-encryption-key-here'   Replace with your actual key
+cipher = Fernet(ENCRYPTION_KEY)
+def encrypt_data(data: str) -> str:
+return cipher.encrypt(data.encode()).decode()
+def decrypt_data(data: str) -> str:
+return cipher.decrypt(data.encode()).decode()
 def get_current_user_role(token: str = Depends(oauth2_scheme)):
 This function should return the role of the current user based on the token
 For example, it could return 'Project Manager', 'Team Member', or 'Viewer'
@@ -59,8 +67,8 @@ raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Customer al
 if customer.currency not in PREDEFINED_CURRENCIES:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid currency selected")
 new_customer = Customer(
-name=customer.name,
-description=customer.description,
+name=encrypt_data(customer.name),
+description=encrypt_data(customer.description),
 logo=customer.logo,
 create_timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
 hourly_rate=customer.hourly_rate,
@@ -87,7 +95,7 @@ return {
 "total": total_customers,
 "page": page,
 "page_size": page_size,
-"customers": customers
+"customers": [{"id": c.id, "name": decrypt_data(c.name), "description": decrypt_data(c.description)} for c in customers]
 }
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -97,6 +105,8 @@ sync_with_crm(db)
 customer = db.query(Customer).filter(Customer.id == customer_id).first()
 if not customer:
 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer not found")
+customer.name = decrypt_data(customer.name)
+customer.description = decrypt_data(customer.description)
 return customer
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -107,8 +117,8 @@ raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorize
 existing_customer = db.query(Customer).filter(Customer.id == customer_id).first()
 if not existing_customer:
 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer not found")
-existing_customer.name = customer.name
-existing_customer.description = customer.description
+existing_customer.name = encrypt_data(customer.name)
+existing_customer.description = encrypt_data(customer.description)
 if customer.logo:
 existing_customer.logo = customer.logo
 if customer.hourly_rate is not None:
@@ -143,7 +153,7 @@ try:
 customers = db.query(Customer).all()
 if not customers:
 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No customers found")
-customer_names = [{"id": customer.id, "name": customer.name} for customer in customers]
+customer_names = [{"id": customer.id, "name": decrypt_data(customer.name)} for customer in customers]
 return customer_names
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -152,7 +162,7 @@ try:
 customers = db.query(Customer).all()
 if not customers:
 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No customers found")
-return customers
+return [{"id": c.id, "name": decrypt_data(c.name), "description": decrypt_data(c.description)} for c in customers]
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 def add_customer_crud(db: Session, customer):
@@ -163,8 +173,8 @@ raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Customer al
 if customer.currency not in PREDEFINED_CURRENCIES:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid currency selected")
 new_customer = Customer(
-name=customer.name,
-description=customer.description,
+name=encrypt_data(customer.name),
+description=encrypt_data(customer.description),
 logo=customer.logo,
 create_timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
 hourly_rate=customer.hourly_rate,
@@ -182,7 +192,7 @@ try:
 customers = db.query(Customer).all()
 if not customers:
 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No customers found")
-return [{"id": customer.id, "name": customer.name} for customer in customers]
+return [{"id": customer.id, "name": decrypt_data(customer.name)} for customer in customers]
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 def assign_project_team_crud(db: Session, project_id: int, team_members: List[dict]):
