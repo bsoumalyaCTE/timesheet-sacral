@@ -5,6 +5,8 @@ from configs.schemas.customer_schema import *
 from configs.models import Customer, Project, ProjectTeamMember   Assuming these models exist
 from datetime import datetime, date
 import os
+import requests   Import requests to handle HTTP requests for CRM integration
+import logging   Import logging to log synchronization events
 UPLOAD_DIR = "uploads/customers/"
 PREDEFINED_CURRENCIES = ["USD", "EUR", "GBP", "INR"]   Example list of predefined currencies
 def notify_customer_addition(customer):
@@ -172,3 +174,38 @@ db.commit()
 return {"message": "Project team assigned successfully"}
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+New function to synchronize customers from CRM
+def sync_customers_from_crm(db: Session):
+try:
+Example CRM API endpoint
+crm_api_url = "https://example-crm.com/api/customers"
+response = requests.get(crm_api_url)
+if response.status_code != 200:
+raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to fetch data from CRM")
+crm_customers = response.json()
+for crm_customer in crm_customers:
+existing_customer = db.query(Customer).filter(Customer.name == crm_customer['name']).first()
+if existing_customer:
+Update existing customer
+existing_customer.description = crm_customer['description']
+existing_customer.logo = crm_customer['logo']
+existing_customer.hourly_rate = crm_customer['hourly_rate']
+existing_customer.currency = crm_customer['currency']
+else:
+Add new customer
+new_customer = Customer(
+name=crm_customer['name'],
+description=crm_customer['description'],
+logo=crm_customer['logo'],
+create_timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+hourly_rate=crm_customer['hourly_rate'],
+currency=crm_customer['currency']
+)
+db.add(new_customer)
+db.commit()
+Log synchronization success
+logging.info("CRM synchronization completed successfully.")
+return {"message": "CRM synchronization completed successfully"}
+except Exception as e:
+logging.error(f"CRM synchronization failed: {str(e)}")
+raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
