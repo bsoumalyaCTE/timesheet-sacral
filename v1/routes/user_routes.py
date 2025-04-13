@@ -45,12 +45,13 @@ raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or
 @user_router.get("/get_all", response_model=userAllResponse, status_code=status.HTTP_200_OK,
 tags=["Users"], summary="List of All Users", description="Retrieve all users.",
 response_description="List of all users.")
-async def get_all_users(db=Depends(get_db), Authorize: AuthJWT = Depends()):
+async def get_all_users(db=Depends(get_db), Authorize: AuthJWT = Depends(), eligible_for_project: bool = False):
 try:
 Authorize.jwt_required()
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid or expired.")
-crud_response = get_all_users_crud(db)
+Modify the query to filter users based on eligibility for project assignment
+crud_response = get_all_users_crud(db, eligible_for_project=eligible_for_project)
 if crud_response:
 return {"status": status.HTTP_200_OK, "message": "Users retrieved successfully.", "data": crud_response}
 else:
