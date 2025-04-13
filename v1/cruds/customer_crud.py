@@ -7,8 +7,16 @@ from datetime import datetime, date
 import os
 import requests   Import requests to handle HTTP requests for CRM integration
 import logging   Import logging to log synchronization events
+from fastapi.security import OAuth2PasswordBearer
+from typing import List
 UPLOAD_DIR = "uploads/customers/"
 PREDEFINED_CURRENCIES = ["USD", "EUR", "GBP", "INR"]   Example list of predefined currencies
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+Mock function to get current user role
+def get_current_user_role(token: str = Depends(oauth2_scheme)):
+This function should return the role of the current user based on the token
+For example, it could return 'Project Manager', 'Team Member', or 'Viewer'
+return "Project Manager"   Placeholder for demonstration
 def notify_customer_addition(customer):
 This function should contain the logic to notify the client-side about the new customer addition.
 For example, it could send a message to a WebSocket or trigger a server-sent event.
@@ -92,8 +100,10 @@ raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer not 
 return customer
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-def update_customer_crud(db: Session, customer_id: int, customer):
+def update_customer_crud(db: Session, customer_id: int, customer, current_user_role: str = Depends(get_current_user_role)):
 try:
+if current_user_role not in ['Project Manager']:
+raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to update customer")
 existing_customer = db.query(Customer).filter(Customer.id == customer_id).first()
 if not existing_customer:
 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer not found")
@@ -113,6 +123,8 @@ raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid cur
 existing_customer.currency = customer.currency
 db.commit()
 db.refresh(existing_customer)
+Log the update for audit trail
+logging.info(f"Customer {customer_id} updated by {current_user_role}")
 return existing_customer
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -182,7 +194,7 @@ return [{"id": customer.id, "name": customer.name} for customer in customers]
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 New function to assign project teams
-def assign_project_team_crud(db: Session, project_id: int, team_members: list):
+def assign_project_team_crud(db: Session, project_id: int, team_members: List[dict]):
 try:
 Fetch the project
 project = db.query(Project).filter(Project.id == project_id).first()
