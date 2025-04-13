@@ -1,3 +1,4 @@
+```python
 from fastapi import APIRouter, HTTPException, Depends, status, File, UploadFile, Form
 from sqlalchemy.orm import Session
 from fastapi_jwt_auth import AuthJWT
@@ -36,10 +37,10 @@ logger.info(f"Audit Trail - Action: {action}, User ID: {user_id}, Details: {deta
 Create a new customer
 @customer_router.post("/", response_model=CustomerResponse, status_code=status.HTTP_201_CREATED)
 def create_customer(
-name: str = Form(...),    Accept `name` as a form field
-description: Optional[str] = Form(None),    Accept `description` as a form field
-logo: UploadFile = File(None),    Accept `logo` as a file
-db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):    Verify the JWT token
+name: str = Form(...),     Accept `name` as a form field
+description: Optional[str] = Form(None),     Accept `description` as a form field
+logo: UploadFile = File(None),     Accept `logo` as a file
+db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):     Verify the JWT token
 try:
 Authorize.jwt_required()
 except Exception as e:
@@ -76,10 +77,10 @@ Update a customer by ID
 @customer_router.put("/{customer_id}", response_model=CustomerResponse)
 def update_customer(
 customer_id: int,
-name: str = Form(...),    Accept `name` as a form field
-description: Optional[str] = Form(None),    Accept `description` as a form field
-logo: UploadFile = File(None),    Accept `logo` as a file
-db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):    Verify the JWT token
+name: str = Form(...),     Accept `name` as a form field
+description: Optional[str] = Form(None),     Accept `description` as a form field
+logo: UploadFile = File(None),     Accept `logo` as a file
+db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):     Verify the JWT token
 try:
 Authorize.jwt_required()
 check_user_role("Project Manager", Authorize)
@@ -125,7 +126,7 @@ Schedule the periodic CRM synchronization task
 celery_app.conf.beat_schedule = {
 'periodic-crm-sync': {
 'task': 'periodic_crm_sync',
-'schedule': 300.0,    Run every 5 minutes
+'schedule': 300.0,     Run every 5 minutes
 },
 }
 Get a single customer by ID
@@ -229,10 +230,10 @@ return {"status": status.HTTP_200_OK, "message": "All Customer Lists for Dropdow
 New endpoint to add a customer from the 'Select Customer' dropdown
 @customer_router.post("/add_from_dropdown", response_model=CustomerResponse, status_code=status.HTTP_201_CREATED)
 def add_customer_from_dropdown(
-name: str = Form(...),    Accept `name` as a form field
-description: Optional[str] = Form(None),    Accept `description` as a form field
-logo: UploadFile = File(None),    Accept `logo` as a file
-db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):    Verify the JWT token
+name: str = Form(...),     Accept `name` as a form field
+description: Optional[str] = Form(None),     Accept `description` as a form field
+logo: UploadFile = File(None),     Accept `logo` as a file
+db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):     Verify the JWT token
 try:
 Authorize.jwt_required()
 except Exception as e:
@@ -261,8 +262,8 @@ New endpoint to add a project team
 @project_router.post("/add_team", status_code=status.HTTP_201_CREATED)
 def add_project_team(
 project_id: int,
-team_members: List[int] = Form(...),    List of team member IDs
-allocations: List[float] = Form(...),    Corresponding allocation percentages
+team_members: List[int] = Form(...),     List of team member IDs
+allocations: List[float] = Form(...),     Corresponding allocation percentages
 db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
 try:
 Authorize.jwt_required()
@@ -288,8 +289,8 @@ New endpoint to edit a project team
 @project_router.put("/edit_team/{project_id}", status_code=status.HTTP_200_OK)
 def edit_project_team(
 project_id: int,
-team_members: List[int] = Form(...),    List of team member IDs
-allocations: List[float] = Form(...),    Corresponding allocation percentages
+team_members: List[int] = Form(...),     List of team member IDs
+allocations: List[float] = Form(...),     Corresponding allocation percentages
 db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
 try:
 Authorize.jwt_required()
@@ -324,3 +325,50 @@ logger.info("Synchronizing all customers with CRM...")
 Simulate successful synchronization
 logger.info("All customers synchronized with CRM successfully.")
 return {"status": status.HTTP_200_OK, "message": "All customers synchronized with CRM successfully."}
+New endpoint to assign roles to team members
+@project_router.post("/assign_role", status_code=status.HTTP_200_OK)
+def assign_role(
+project_id: int,
+user_id: int,
+role: str = Form(...),
+db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
+try:
+Authorize.jwt_required()
+check_user_role("Project Manager", Authorize)
+except HTTPException as e:
+raise e
+except Exception as e:
+raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid or expired.")
+if role not in ROLES:
+raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid role selected.")
+Logic to assign role to a team member
+Assuming a function `assign_role_crud` exists
+role_data = {
+"project_id": project_id,
+"user_id": user_id,
+"role": role
+}
+crud_response = assign_role_crud(db, role_data)
+if crud_response:
+Log the role assignment action for audit trail
+log_audit_trail("Assign Role", Authorize.get_jwt_subject(), f"Assigned role {role} to user ID: {user_id} in project ID: {project_id}")
+return {"status": status.HTTP_200_OK, "message": "Role assigned successfully.", "data": crud_response}
+else:
+raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Role assignment failed.")
+New endpoint to view audit trail
+@project_router.get("/audit_trail", status_code=status.HTTP_200_OK)
+def view_audit_trail(db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
+try:
+Authorize.jwt_required()
+check_user_role("Project Manager", Authorize)
+except HTTPException as e:
+raise e
+except Exception as e:
+raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid or expired.")
+Logic to fetch audit trail
+Assuming a function `get_audit_trail_crud` exists
+crud_response = get_audit_trail_crud(db)
+if crud_response:
+return {"status": status.HTTP_200_OK, "message": "Audit trail fetched successfully.", "data": crud_response}
+else:
+raise
