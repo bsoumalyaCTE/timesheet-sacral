@@ -5,9 +5,12 @@ from configs.schemas.user_schema import *
 from v1.cruds.user_crud import *
 from v1.cruds.project_crud import *   Assuming this is where project-related CRUD functions are defined
 from v1.cruds.crm_integration import *   Assuming this is where CRM integration functions are defined
+from v1.services.role_service import RoleService   Assuming this is where RoleService is defined
+from v1.models.audit_log import AuditLog   Assuming this is where AuditLog is defined
 user_router = APIRouter(prefix="/user", tags=["Users"])
 @AuthJWT.load_config
 def get_config():
+Enhance this function to include multi-factor authentication options
 return tokenSettings()
 @user_router.post("/signup", response_model=userSignUpResponse, status_code=status.HTTP_201_CREATED,
 tags=["Users"], summary="User Signup", description="Create a new user.",
@@ -93,8 +96,12 @@ async def assign_role(project_id: int, role_assignment: RoleAssignmentModel, db=
 try:
 Authorize.jwt_required()
 Logic to assign role to user
-crud_response = assign_role_crud(db, project_id, role_assignment)
+role_service = RoleService(db)
+crud_response = role_service.assign_role(project_id, role_assignment)
 if crud_response:
+Log the role assignment in the audit trail
+audit_log = AuditLog(db)
+audit_log.record_role_assignment(project_id, role_assignment)
 return {"status": status.HTTP_200_OK, "message": "Role assigned successfully.", "data": crud_response}
 else:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Role assignment failed.")
@@ -105,7 +112,8 @@ async def view_roles(project_id: int, db=Depends(get_db), Authorize: AuthJWT = D
 try:
 Authorize.jwt_required()
 Logic to view roles
-roles_data = view_roles_crud(db, project_id)
+role_service = RoleService(db)
+roles_data = role_service.view_roles(project_id)
 if roles_data:
 return {"status": status.HTTP_200_OK, "message": "Roles retrieved successfully.", "data": roles_data}
 else:
@@ -117,7 +125,8 @@ async def view_audit_trail(project_id: int, db=Depends(get_db), Authorize: AuthJ
 try:
 Authorize.jwt_required()
 Logic to view audit trail
-audit_trail_data = view_audit_trail_crud(db, project_id)
+audit_log = AuditLog(db)
+audit_trail_data = audit_log.get_audit_trail(project_id)
 if audit_trail_data:
 return {"status": status.HTTP_200_OK, "message": "Audit trail retrieved successfully.", "data": audit_trail_data}
 else:
