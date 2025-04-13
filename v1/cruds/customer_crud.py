@@ -1,14 +1,15 @@
 from fastapi import APIRouter, HTTPException, Depends, status, BackgroundTasks
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 from configs.database import get_db
 from configs.schemas.customer_schema import *
-from configs.models import Customer, Project, ProjectTeamMember, ProjectRole, AuditTrail   Assuming these models exist
+from configs.models import Customer, Project, ProjectTeamMember, ProjectRole, AuditTrail
 from datetime import datetime, date
 import os
 import requests
 import logging
 from fastapi.security import OAuth2PasswordBearer
-from typing import List
+from typing import List, Optional
 UPLOAD_DIR = "uploads/customers/"
 PREDEFINED_CURRENCIES = ["USD", "EUR", "GBP", "INR"]
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -73,12 +74,21 @@ sync_with_crm(db)
 return new_customer
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-def list_customers_crud(db: Session):
+def list_customers_crud(db: Session, page: int = 1, page_size: int = 10, filter: Optional[str] = None):
 try:
-customers = db.query(Customer).all()
+query = db.query(Customer)
+if filter:
+query = query.filter(or_(Customer.name.ilike(f"%{filter}%"), Customer.description.ilike(f"%{filter}%")))
+total_customers = query.count()
+customers = query.offset((page - 1) * page_size).limit(page_size).all()
 if not customers:
 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No customers found")
-return customers
+return {
+"total": total_customers,
+"page": page,
+"page_size": page_size,
+"customers": customers
+}
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 def get_customer_crud(db: Session, customer_id: int):
@@ -235,7 +245,6 @@ raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=st
 def synchronize_customer_data(db: Session, background_tasks: BackgroundTasks):
 background_tasks.add_task(sync_with_crm, db)
 return {"message": "Synchronization task has been scheduled."}
-New functions for managing project roles and audit trail
 def create_project_role_crud(db: Session, project_id: int, user_id: int, role: str, current_user_role: str = Depends(get_current_user_role)):
 try:
 if current_user_role not in ['Project Manager']:
