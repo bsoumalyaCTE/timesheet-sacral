@@ -13,6 +13,7 @@ from celery import Celery
 import logging
 from typing import List, Optional
 from some_mfa_library import verify_mfa   Assuming this is the MFA library
+from cryptography.fernet import Fernet   For data encryption
 Directory to save uploaded files
 UPLOAD_DIR = "uploads/customers/"
 Ensure the upload directory exists
@@ -36,6 +37,9 @@ raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient 
 Function to log actions for audit trail
 def log_audit_trail(action: str, user_id: int, details: str):
 logger.info(f"Audit Trail - Action: {action}, User ID: {user_id}, Details: {details}")
+Encryption key for sensitive data
+encryption_key = Fernet.generate_key()
+cipher_suite = Fernet(encryption_key)
 Create a new customer
 @customer_router.post("/", response_model=CustomerResponse, status_code=status.HTTP_201_CREATED)
 def create_customer(
@@ -144,14 +148,30 @@ Get a single customer by ID
 def get_customer(customer_id: int, db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
 try:
 Authorize.jwt_required()
+Verify MFA token
+mfa_token = "some_mfa_token"   This should be passed as a parameter or obtained from the request
+if not verify_mfa(mfa_token):
+raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid MFA token.")
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid or expired.")
 crud_response = get_customer_crud(db, customer_id)
 if not crud_response:
 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer not found")
+Encrypt sensitive data before returning
+encrypted_name = cipher_suite.encrypt(crud_response.name.encode()).decode()
+encrypted_description = cipher_suite.encrypt(crud_response.description.encode()).decode() if crud_response.description else None
 Trigger synchronization with CRM in the background
 sync_with_crm.delay(customer_id)
-return {"status": status.HTTP_200_OK, "message": "Customer Information fetched.", "data": crud_response}
+return {
+"status": status.HTTP_200_OK,
+"message": "Customer Information fetched.",
+"data": {
+"id": crud_response.id,
+"name": encrypted_name,
+"description": encrypted_description,
+"logo": crud_response.logo
+}
+}
 Get a list of all customers with filtering and pagination
 @customer_router.get("/", response_model=AllCustomerResponse)
 def list_customers(
@@ -356,20 +376,4 @@ check_user_role("Project Manager", Authorize)
 except HTTPException as e:
 raise e
 except Exception as e:
-raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid or expired.")
-if role not in ROLES:
-raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid role selected.")
-Logic to assign role to a team member
-Assuming a function `assign_role_crud` exists
-role_data = {
-"project_id": project_id,
-"user_id": user_id,
-"role": role
-}
-crud_response = assign_role_crud(db, role_data)
-if crud_response:
-Log the role assignment action for audit trail
-log_audit_trail("Assign Role", Authorize.get_jwt_subject(), f"Assigned role {role} to user ID: {user_id} in project ID: {project_id}")
-return {"status": status.HTTP_200_OK, "message": "Role assigned successfully.", "data": crud_response}
-else:
-raise
+raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid
