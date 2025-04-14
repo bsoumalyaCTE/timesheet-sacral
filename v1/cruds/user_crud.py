@@ -114,3 +114,34 @@ return customers
 except Exception as e:
 logger.error(f"Error fetching customers: {str(e)}")
 raise HTTPException(status_code=400, detail="Failed to fetch customers")
+New function to get employee data from HRM
+def get_employee_data_from_hrm():
+try:
+response = requests.get("https://hrm-system.example.com/api/employees", headers={"Authorization": "Bearer YOUR_TOKEN"})
+response.raise_for_status()
+return response.json()
+except requests.RequestException as e:
+logger.error(f"Error fetching employee data from HRM: {str(e)}")
+raise HTTPException(status_code=400, detail="Failed to fetch employee data from HRM")
+Function to update user information based on HRM data
+def update_user_information(db):
+try:
+employees = get_employee_data_from_hrm()
+for employee in employees:
+user = db.query(User).filter(User.id == employee['id']).first()
+if user:
+user.name = employee['name']
+user.role = employee['role']
+user.availability = employee['availability']
+else:
+new_user = User(
+id=employee['id'],
+name=employee['name'],
+role=employee['role'],
+availability=employee['availability']
+)
+db.add(new_user)
+db.commit()
+except Exception as e:
+logger.error(f"Error updating user information: {str(e)}")
+raise HTTPException(status_code=400, detail="Failed to update user information")
