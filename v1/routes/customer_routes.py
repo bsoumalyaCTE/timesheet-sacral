@@ -82,6 +82,7 @@ if crud_response:
 Trigger synchronization with CRM after customer creation
 sync_with_crm.delay(crud_response.id)
 log_audit_trail("Create Customer", Authorize.get_jwt_subject(), f"Customer created successfully with ID: {crud_response.id}")
+log_user_activity("Create Customer", Authorize.get_jwt_subject(), f"Customer created successfully with ID: {crud_response.id}")
 return {"status": status.HTTP_200_OK, "message": "Customer created successfully.", "data": crud_response}
 else:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User creation failed.")
@@ -361,11 +362,4 @@ logo_path = save_file(logo, UPLOAD_DIR)
 customer_data = CustomerCreate(
 name=name,
 description=description,
-logo=logo_path
-)
-else:
-customer_data = CustomerCreate(
-name=name,
-description=description
-)
-crud_response
+logo=logo
