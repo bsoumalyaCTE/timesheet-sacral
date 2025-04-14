@@ -108,6 +108,10 @@ audit_log.record_logout(current_user)
 return {"status": status.HTTP_200_OK, "message": "User logged out successfully."}
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token.")
+def check_user_permissions(Authorize: AuthJWT, required_role: str):
+user_roles = Authorize.get_raw_jwt().get("roles", [])
+if required_role not in user_roles:
+raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to access this resource.")
 @user_router.get("/get_all", response_model=userAllResponse, status_code=status.HTTP_200_OK,
 tags=["Users"], summary="List of All Users", description="Retrieve all users.",
 response_description="List of all users.")
@@ -115,12 +119,12 @@ async def get_all_users(db=Depends(get_db), Authorize: AuthJWT = Depends(), elig
 try:
 Authorize.jwt_required()
 Check user role and permissions
-current_user = Authorize.get_jwt_subject()
-user_roles = Authorize.get_raw_jwt().get("roles", [])
-if "admin" not in user_roles:
-raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to view user information.")
+check_user_permissions(Authorize, "admin")
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid or expired.")
+Log the access attempt
+audit_log = AuditLog(db)
+audit_log.record_access_attempt(Authorize.get_jwt_subject(), "get_all_users", success=True)
 Modify the query to filter users based on eligibility for project assignment
 crud_response = get_all_users_crud(db, eligible_for_project=eligible_for_project)
 if crud_response:
@@ -305,8 +309,4 @@ except Exception as e:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized access.")
 New endpoints for time tracking integration
 @user_router.post("/projects/time_tracking/configure", tags=["Projects"], summary="Configure Time Tracking Integration", description="Configure integration with time tracking tools.")
-async def configure_time_tracking_integration(config: TimeTrackingConfigModel, db=Depends(get_db), Authorize: AuthJWT = Depends()):
-try:
-Authorize.jwt_required()
-Logic to configure time tracking integration
-crud_response
+async def configure
