@@ -92,3 +92,14 @@ os.environ["ENCRYPTION_KEY"] = generate_key().decode()
 Example of encrypting and decrypting data
 encrypted_name = encrypt_data("Sensitive Project Name")
 decrypted_name = decrypt_data(encrypted_name)
+Transaction management for database session
+def get_db_with_transaction():
+db = SessionLocal()
+try:
+yield db
+db.commit()   Commit the transaction if no exceptions
+except Exception as e:
+db.rollback()   Rollback the transaction in case of error
+raise e
+finally:
+db.close()
