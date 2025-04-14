@@ -214,6 +214,10 @@ Fetch time tracking data if requested
 time_tracking_data = None
 if include_time_tracking:
 time_tracking_data = get_customer_time_tracking_data(customer_id)
+Log the retrieval action for audit trail
+log_audit_trail("Get Customer", Authorize.get_jwt_subject(), f"Retrieved customer ID: {customer_id}")
+Log user activity
+log_user_activity("Get Customer", Authorize.get_jwt_subject(), f"Customer information retrieved successfully with ID: {customer_id}")
 return {
 "status": status.HTTP_200_OK,
 "message": "Customer Information fetched.",
@@ -354,12 +358,4 @@ logo: UploadFile = File(None),   Accept `logo` as a file
 db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):   Verify the JWT token
 try:
 Authorize.jwt_required()
-except Exception as e:
-raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid or expired.")
-Save the uploaded image file if provided
-if logo:
-logo_path = save_file(logo, UPLOAD_DIR)
-customer_data = CustomerCreate(
-name=name,
-description=description,
-logo=logo
+except Exception
