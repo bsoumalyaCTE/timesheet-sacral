@@ -94,6 +94,15 @@ if user:
 user.name = employee['name']
 user.role = employee['role']
 user.availability = employee['availability']
+else:
+If user does not exist, create a new user
+new_user = User(
+id=employee['id'],
+name=employee['name'],
+role=employee['role'],
+availability=employee['availability']
+)
+db.add(new_user)
 db.commit()
 except Exception as e:
 logger.error(f"Error updating employee data: {str(e)}")
