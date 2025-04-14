@@ -1,5 +1,5 @@
 from fastapi import HTTPException, status
-from configs.models import Project, ProjectTeam, User, Customer
+from configs.models import Project, ProjectTeam, User
 from datetime import datetime
 def assign_project_team_crud(db, project_id, team_data):
 try:
@@ -47,24 +47,25 @@ db.commit()
 return {"message": "Project team updated successfully"}
 except Exception as e:
 raise HTTPException(status_code=400, detail=str(e))
-def create_project_crud(db, project_data):
+New method to fetch user financial data
+def get_user_financial_data(db, user_id):
 try:
-customer_id = project_data.get('customer_id')
-if not customer_id:
-raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Customer selection is mandatory")
-customer = db.query(Customer).filter(Customer.id == customer_id).first()
-if not customer:
-raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer not found")
-new_project = Project(
-name=project_data['name'],
-description=project_data.get('description'),
-start_date=project_data.get('start_date', datetime.utcnow()),
-end_date=project_data.get('end_date'),
-customer_id=customer_id
-)
-db.add(new_project)
-db.commit()
-db.refresh(new_project)
-return {"message": "Project created successfully", "project_id": new_project.id}
+user = db.query(User).filter(User.id == user_id).first()
+if not user:
+raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+Fetch financial data related to the user's projects
+This is a placeholder for the actual API call to the financial system
+financial_data = fetch_financial_data_from_system(user_id)
+if not financial_data:
+raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Financial data not found")
+return financial_data
 except Exception as e:
 raise HTTPException(status_code=400, detail=str(e))
+def fetch_financial_data_from_system(user_id):
+Placeholder function to simulate fetching data from a financial system
+In a real implementation, this would involve API calls to the financial system
+return {
+"user_id": user_id,
+"billing_data": [],
+"invoicing_data": []
+}
