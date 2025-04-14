@@ -1,5 +1,5 @@
 from fastapi import HTTPException, status
-from configs.models import Project, ProjectTeam, User
+from configs.models import Project, ProjectTeam, User, Customer   Assuming Customer model is defined
 from datetime import datetime
 import requests
 import logging
@@ -107,3 +107,10 @@ db.commit()
 except Exception as e:
 logger.error(f"Error updating employee data: {str(e)}")
 raise HTTPException(status_code=400, detail=str(e))
+def get_all_customers_crud(db):
+try:
+customers = db.query(Customer).all()
+return customers
+except Exception as e:
+logger.error(f"Error fetching customers: {str(e)}")
+raise HTTPException(status_code=400, detail="Failed to fetch customers")
