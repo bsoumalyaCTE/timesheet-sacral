@@ -121,11 +121,11 @@ try:
 Authorize.jwt_required()
 Check user role and permissions
 check_user_role_permission(Authorize, "admin")
-except Exception as e:
-raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid or expired.")
 Log the access attempt
 audit_log = AuditLog(db)
 audit_log.record_access_attempt(Authorize.get_jwt_subject(), "get_all_users", success=True)
+except Exception as e:
+raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid or expired.")
 Modify the query to filter users based on eligibility for project assignment
 crud_response = get_all_users_crud(db, eligible_for_project=eligible_for_project)
 if crud_response:
@@ -309,4 +309,4 @@ raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Automatic H
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized access.")
 New endpoints for time tracking integration
-@user_router.post("/projects/time_tracking/configure", tags=["Projects"], summary="Configure Time Tracking Integration",
+@user_router.post("/projects/time_tracking/configure", tags=["Projects"], summary="Configure Time Tracking Integration
