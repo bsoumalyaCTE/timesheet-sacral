@@ -1,4 +1,3 @@
-```python
 from fastapi import APIRouter, HTTPException, Depends, status, File, UploadFile, Form, Query
 from sqlalchemy.orm import Session
 from fastapi_jwt_auth import AuthJWT
@@ -87,6 +86,19 @@ This is a placeholder for the actual CRM integration logic
 logger.info(f"Synchronizing customer data for customer ID: {customer_id}")
 Simulate successful synchronization
 logger.info(f"Customer data for customer ID: {customer_id} synchronized successfully.")
+New function to fetch and sync customer data from CRM
+def sync_customer_with_crm(customer_id: int, db: Session):
+try:
+Placeholder for CRM API call to fetch customer data
+logger.info(f"Fetching customer data from CRM for customer ID: {customer_id}")
+Simulate fetching data
+crm_data = {"name": "CRM Customer", "description": "Fetched from CRM"}
+Update local database with CRM data
+update_customer_crud(db, customer_id, crm_data)
+logger.info(f"Customer data for customer ID: {customer_id} updated with CRM data.")
+except Exception as e:
+logger.error(f"Error synchronizing customer data with CRM: {str(e)}")
+raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="CRM synchronization failed.")
 Update a customer by ID
 @customer_router.put("/{customer_id}", response_model=CustomerResponse)
 def update_customer(
@@ -102,6 +114,8 @@ except HTTPException as e:
 raise e
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid or expired.")
+Synchronize customer data with CRM before updating
+sync_customer_with_crm(customer_id, db)
 Save the uploaded image file if provided
 if logo:
 Remove the existing logo file if it exists
@@ -355,22 +369,3 @@ broadcast_update_to_sessions()
 return {"status": status.HTTP_200_OK, "message": "Project team updated successfully.", "data": crud_response}
 else:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Project team update failed.")
-New endpoint to synchronize customers with CRM
-@project_router.post("/sync_customers_with_crm", status_code=status.HTTP_200_OK)
-def sync_customers_with_crm(db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
-try:
-Authorize.jwt_required()
-except Exception as e:
-raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid or expired.")
-Logic to synchronize customers with CRM
-This is a placeholder for the actual CRM integration logic
-logger.info("Synchronizing all customers with CRM...")
-Simulate successful synchronization
-logger.info("All customers synchronized with CRM successfully.")
-return {"status": status.HTTP_200_OK, "message": "All customers synchronized with CRM successfully."}
-New endpoint to assign roles to team members
-@project_router.post("/assign_role", status_code=status.HTTP_200_OK)
-def assign_role(
-project_id: int,
-user_id: int,
-role: str = Form(...
