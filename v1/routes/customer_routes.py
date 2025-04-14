@@ -40,6 +40,9 @@ logger.info(f"Audit Trail - Action: {action}, User ID: {user_id}, Details: {deta
 Encryption key for sensitive data
 encryption_key = Fernet.generate_key()
 cipher_suite = Fernet(encryption_key)
+Function to log user activity
+def log_user_activity(action: str, user_id: int, details: str):
+logger.info(f"User Activity - Action: {action}, User ID: {user_id}, Details: {details}")
 Create a new customer
 @customer_router.post("/", response_model=CustomerResponse, status_code=status.HTTP_201_CREATED)
 def create_customer(
@@ -163,6 +166,8 @@ if not crud_response:
 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer not found")
 Log the update action for audit trail
 log_audit_trail("Update Customer", Authorize.get_jwt_subject(), f"Updated customer ID: {customer_id}")
+Log user activity
+log_user_activity("Update Customer", Authorize.get_jwt_subject(), f"Customer record updated successfully with ID: {customer_id}")
 Call the synchronization function after updating the customer
 synchronize_customer_data.delay(customer_id)
 return {"status": status.HTTP_200_OK, "message": "Customer record updated successfully.", "data": crud_response}
@@ -363,10 +368,4 @@ customer_data = CustomerCreate(
 name=name,
 description=description
 )
-crud_response = create_customer_crud(db, customer_data)
-if crud_response:
-Broadcast the update to all active sessions (pseudo-code, implement as needed)
-broadcast_update_to_sessions()
-return {"status": status.HTTP_200_OK, "message": "Customer added from dropdown successfully.", "data": crud_response}
-else:
-raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="
+crud_response
