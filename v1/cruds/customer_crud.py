@@ -74,6 +74,20 @@ return None
 except Exception as e:
 logging.error(f"Failed to check customer in CRM: {str(e)}")
 raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+def log_audit_trail(db: Session, action: str, description: str, details: dict):
+try:
+audit_entry = AuditTrail(
+timestamp=datetime.now(),
+user_id="current_user_id",   Replace with actual user ID retrieval logic
+action=action,
+description=description,
+details=str(details)
+)
+db.add(audit_entry)
+db.commit()
+except Exception as e:
+logging.error(f"Failed to log audit trail: {str(e)}")
+raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to log audit trail")
 def create_customer_crud(db: Session, customer):
 try:
 existing_customer = db.query(Customer).filter(Customer.name == customer.name).first()
@@ -120,6 +134,8 @@ db.commit()
 db.refresh(new_customer)
 notify_customer_addition(new_customer)
 sync_with_crm(db)
+Log audit trail
+log_audit_trail(db, "create_customer_crud", "Create customer", new_customer)
 return new_customer
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -371,17 +387,4 @@ existing_project = db.query(Project).filter(Project.id == project_id).first()
 if not existing_project:
 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
 existing_project.name = project.name
-existing_project.description = project.description
-existing_project.customer_id = project.customer_id
-existing_project.billing_option = project.billing_option
-existing_project.currency = project.currency
-existing_project.start_date = project.start_date
-existing_project.end_date = project.end_date
-db.commit()
-db.refresh(existing_project)
-Log audit trail
-log_audit_trail(db, "update_project_crud", f"Update project {project_id}", existing_project)
-return existing_project
-except Exception as e:
-raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-def delete_project_crud(db: Session, project_id: int):
+existing
