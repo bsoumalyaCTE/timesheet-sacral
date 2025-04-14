@@ -178,7 +178,10 @@ celery_app.conf.beat_schedule = {
 }
 Get a single customer by ID
 @customer_router.get("/{customer_id}", response_model=CustomerResponse)
-def get_customer(customer_id: int, db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
+def get_customer(
+customer_id: int,
+include_time_tracking: bool = Query(False),   New query parameter to include time tracking data
+db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
 try:
 Authorize.jwt_required()
 Verify MFA token
@@ -195,6 +198,10 @@ encrypted_name = cipher_suite.encrypt(crud_response.name.encode()).decode()
 encrypted_description = cipher_suite.encrypt(crud_response.description.encode()).decode() if crud_response.description else None
 Trigger synchronization with CRM in the background
 sync_with_crm.delay(customer_id)
+Fetch time tracking data if requested
+time_tracking_data = None
+if include_time_tracking:
+time_tracking_data = get_customer_time_tracking_data(customer_id)
 return {
 "status": status.HTTP_200_OK,
 "message": "Customer Information fetched.",
@@ -202,7 +209,8 @@ return {
 "id": crud_response.id,
 "name": encrypted_name,
 "description": encrypted_description,
-"logo": crud_response.logo
+"logo": crud_response.logo,
+"time_tracking_data": time_tracking_data   Include time tracking data if available
 }
 }
 Get a list of all customers with filtering and pagination
@@ -365,11 +373,4 @@ try:
 Authorize.jwt_required()
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid or expired.")
-if sum(allocations) > 100:
-raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Total allocation exceeds 100%.")
-Logic to add team members to a project
-Assuming a function `add_project_team_crud` exists
-team_data = {
-"project_id": project_id,
-"team_members": team_members,
-"allocations
+if sum(allocations
