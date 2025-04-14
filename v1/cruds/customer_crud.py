@@ -387,4 +387,4 @@ existing_project = db.query(Project).filter(Project.id == project_id).first()
 if not existing_project:
 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
 existing_project.name = project.name
-existing
+existing_project
