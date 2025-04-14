@@ -1,4 +1,3 @@
-```python
 from fastapi import APIRouter, HTTPException, Depends, status, BackgroundTasks
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
@@ -390,4 +389,3 @@ log_audit_trail(db, project_id, user_id, role, "Assigned")
 return {"message": "Role assigned successfully"}
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-def update_project_role_crud(db: Session, project_id: int, user_id: int, role: str, current_user_role: str = Depends(get_current_user
