@@ -266,6 +266,7 @@ for member in team_members:
 total_allocation += member['allocation_percentage']
 if total_allocation > 100:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Total allocation percentage exceeds 100%")
+for member in team_members:
 existing_member = db.query(ProjectTeamMember).filter(
 ProjectTeamMember.project_id == project_id,
 ProjectTeamMember.user_id == member['user_id']
