@@ -19,8 +19,8 @@ DATABASE_URL,
 connect_args={"charset": "utf8mb4"},
 pool_pre_ping=True,
 poolclass=QueuePool,
-pool_size=10,   Adjust pool size based on expected load
-max_overflow=20,   Allow some overflow connections
+pool_size=20,   Adjusted pool size based on expected load from CRM integration
+max_overflow=30,   Allow some overflow connections
 pool_timeout=30   Timeout for getting a connection from the pool
 )
 Create a configured "Session" class
@@ -43,6 +43,7 @@ customer_id = Column(Integer, ForeignKey('customers.id'))
 billing_option = Column(String)   Example field for billing options
 team_assignment = Column(String)   Example field for team assignments
 customer = relationship("Customer", back_populates="projects")
+tasks = relationship("Task", order_by="Task.id", back_populates="project")
 New Task model
 class Task(Base):
 __tablename__ = 'tasks'
@@ -52,8 +53,6 @@ name = Column(String, index=True)
 status = Column(String)   Example field for task status
 time_spent = Column(Float)   Example field for time spent on task
 project = relationship("Project", back_populates="tasks")
-Add relationship to Project model
-Project.tasks = relationship("Task", order_by="Task.id", back_populates="project")
 Dependency to get the database session
 def get_db():
 db = SessionLocal()
