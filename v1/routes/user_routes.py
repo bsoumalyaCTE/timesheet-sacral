@@ -41,6 +41,11 @@ except Exception as e:
 Log the error and return a generic error message
 Ensure compliance with data protection and privacy regulations
 return HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Financial system integration error.")
+New middleware function to check user role and permissions
+def check_user_role_permission(Authorize: AuthJWT, required_role: str):
+user_roles = Authorize.get_raw_jwt().get("roles", [])
+if required_role not in user_roles:
+raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to access this resource.")
 @user_router.post("/signup", response_model=userSignUpResponse, status_code=status.HTTP_201_CREATED,
 tags=["Users"], summary="User Signup", description="Create a new user.",
 response_description="User created successfully.")
@@ -108,10 +113,6 @@ audit_log.record_logout(current_user)
 return {"status": status.HTTP_200_OK, "message": "User logged out successfully."}
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token.")
-def check_user_permissions(Authorize: AuthJWT, required_role: str):
-user_roles = Authorize.get_raw_jwt().get("roles", [])
-if required_role not in user_roles:
-raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to access this resource.")
 @user_router.get("/get_all", response_model=userAllResponse, status_code=status.HTTP_200_OK,
 tags=["Users"], summary="List of All Users", description="Retrieve all users.",
 response_description="List of all users.")
@@ -119,7 +120,7 @@ async def get_all_users(db=Depends(get_db), Authorize: AuthJWT = Depends(), elig
 try:
 Authorize.jwt_required()
 Check user role and permissions
-check_user_permissions(Authorize, "admin")
+check_user_role_permission(Authorize, "admin")
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid or expired.")
 Log the access attempt
@@ -308,5 +309,4 @@ raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Automatic H
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized access.")
 New endpoints for time tracking integration
-@user_router.post("/projects/time_tracking/configure", tags=["Projects"], summary="Configure Time Tracking Integration", description="Configure integration with time tracking tools.")
-async def configure_time
+@user_router.post("/projects/time_tracking/configure", tags=["Projects"], summary="Configure Time Tracking Integration",
