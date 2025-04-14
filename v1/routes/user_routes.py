@@ -90,7 +90,7 @@ Log the failed login attempt
 log_user_activity(db, user.email, "login", False)
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials.")
 @user_router.post("/refresh", tags=["Users"], summary="Refresh Token", description="Generate a new access token using the refresh token.")
-async def refresh_token(Authorize: AuthJWT = Depends()):
+async def refresh_token(Authorize: AuthJWT = Depends(), db=Depends(get_db)):
 try:
 Authorize.jwt_refresh_token_required()
 current_user = Authorize.get_jwt_subject()
@@ -98,8 +98,12 @@ Check if MFA is completed before issuing a new access token
 if not MFAService().is_mfa_completed(current_user):
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="MFA not completed.")
 new_access_token = Authorize.create_access_token(subject=current_user, fresh=False)
+Log the refresh token action
+log_user_activity(db, current_user, "refresh_token", True)
 return {"status": status.HTTP_200_OK, "message": "Access token refreshed successfully.", "access_token": new_access_token}
 except Exception as e:
+Log the failed refresh token attempt
+log_user_activity(db, current_user, "refresh_token", False)
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired refresh token.")
 @user_router.post("/logout", tags=["Users"], summary="Logout User", description="Logout the user by invalidating tokens.")
 async def logout_user(Authorize: AuthJWT = Depends(), db=Depends(get_db)):
@@ -304,8 +308,4 @@ Logic to handle automatic updates from the HRM system
 hrm_service = HRMIntegrationService()
 auto_update_response = hrm_service.handle_automatic_updates()
 if auto_update_response:
-return {"status": status.HTTP_200_OK, "message": "Automatic HRM updates handled successfully.", "data": auto_update_response}
-else:
-raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Automatic HRM updates handling failed.")
-except Exception as e:
-raise HTTPException(status_code=status.HTTP_401
+return {"status": status.HTTP_200_OK, "message": "Automatic HR
