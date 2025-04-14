@@ -46,6 +46,10 @@ def check_user_role_permission(Authorize: AuthJWT, required_role: str):
 user_roles = Authorize.get_raw_jwt().get("roles", [])
 if required_role not in user_roles:
 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to access this resource.")
+New function to log user activities
+def log_user_activity(db, user_id, action, success):
+audit_log = AuditLog(db)
+audit_log.record_activity(user_id, action, success)
 @user_router.post("/signup", response_model=userSignUpResponse, status_code=status.HTTP_201_CREATED,
 tags=["Users"], summary="User Signup", description="Create a new user.",
 response_description="User created successfully.")
@@ -57,6 +61,8 @@ role_service = RoleService(db)
 default_role_assignment = role_service.assign_default_role(crud_response['id'])
 if not default_role_assignment:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Default role assignment failed.")
+Log the signup activity
+log_user_activity(db, crud_response['id'], "signup", True)
 return {"status": status.HTTP_200_OK, "message": "User created successfully.", "data": crud_response}
 else:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User creation failed.")
@@ -75,15 +81,13 @@ user_roles = Authorize.get_raw_jwt().get("roles", [])
 if not any(role in user_roles for role in ["admin", "user"]):
 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to access.")
 Log the login attempt
-audit_log = AuditLog(db)
-audit_log.record_login_attempt(user.email, success=True)
+log_user_activity(db, user.email, "login", True)
 return {"status": status.HTTP_200_OK, "message": "MFA initiated. Please verify.", "data": crud_response}
 else:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="MFA initiation failed.")
 else:
 Log the failed login attempt
-audit_log = AuditLog(db)
-audit_log.record_login_attempt(user.email, success=False)
+log_user_activity(db, user.email, "login", False)
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials.")
 @user_router.post("/refresh", tags=["Users"], summary="Refresh Token", description="Generate a new access token using the refresh token.")
 async def refresh_token(Authorize: AuthJWT = Depends()):
@@ -108,8 +112,7 @@ raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="MFA not co
 Invalidate tokens securely
 Authorize.unset_jwt_cookies()
 Log the logout event for audit purposes
-audit_log = AuditLog(db)
-audit_log.record_logout(current_user)
+log_user_activity(db, current_user, "logout", True)
 return {"status": status.HTTP_200_OK, "message": "User logged out successfully."}
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token.")
@@ -122,8 +125,7 @@ Authorize.jwt_required()
 Check user role and permissions
 check_user_role_permission(Authorize, "admin")
 Log the access attempt
-audit_log = AuditLog(db)
-audit_log.record_access_attempt(Authorize.get_jwt_subject(), "get_all_users", success=True)
+log_user_activity(db, Authorize.get_jwt_subject(), "get_all_users", True)
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid or expired.")
 Modify the query to filter users based on eligibility for project assignment
@@ -169,8 +171,7 @@ role_service = RoleService(db)
 crud_response = role_service.assign_role(project_id, role_assignment)
 if crud_response:
 Log the role assignment in the audit trail
-audit_log = AuditLog(db)
-audit_log.record_role_assignment(project_id, role_assignment)
+log_user_activity(db, role_assignment.user_id, "assign_role", True)
 return {"status": status.HTTP_200_OK, "message": "Role assigned successfully.", "data": crud_response}
 else:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Role assignment failed.")
@@ -307,6 +308,4 @@ return {"status": status.HTTP_200_OK, "message": "Automatic HRM updates handled 
 else:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Automatic HRM updates handling failed.")
 except Exception as e:
-raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized access.")
-New endpoints for time tracking integration
-@user_router.post("/projects/time_tracking/configure", tags=["Projects"], summary="Configure Time Tracking Integration
+raise HTTPException(status_code=status.HTTP_401
