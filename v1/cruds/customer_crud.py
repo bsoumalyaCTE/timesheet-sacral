@@ -1,3 +1,4 @@
+```python
 from fastapi import APIRouter, HTTPException, Depends, status, BackgroundTasks
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
@@ -390,3 +391,7 @@ log_audit_trail(db, project_id, user_id, role, "Assigned")
 return {"message": "Role assigned successfully"}
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+New function to fetch customers for the dropdown menu
+def get_customers_crud(db: Session):
+try:
+sync_with_crm(db)
