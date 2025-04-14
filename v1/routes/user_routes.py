@@ -8,6 +8,7 @@ from v1.cruds.crm_integration import *
 from v1.services.role_service import RoleService
 from v1.models.audit_log import AuditLog
 from v1.services.mfa_service import MFAService   Assuming there's an MFA service
+from v1.services.hrm_integration_service import HRMIntegrationService   Assuming this service exists
 import os
 user_router = APIRouter(prefix="/user", tags=["Users"])
 @AuthJWT.load_config
@@ -251,7 +252,8 @@ async def get_employee_data(db=Depends(get_db), Authorize: AuthJWT = Depends()):
 try:
 Authorize.jwt_required()
 Logic to retrieve employee data from HRM system
-employee_data = get_employee_data_crud(db)
+hrm_service = HRMIntegrationService()
+employee_data = hrm_service.get_employee_data()
 if employee_data:
 return {"status": status.HTTP_200_OK, "message": "Employee data retrieved successfully.", "data": employee_data}
 else:
@@ -263,7 +265,8 @@ async def update_project_assignments(hrm_update: HRMUpdateModel, db=Depends(get_
 try:
 Authorize.jwt_required()
 Logic to update project assignments based on HRM data
-update_response = update_project_assignments_crud(db, hrm_update)
+hrm_service = HRMIntegrationService()
+update_response = hrm_service.update_project_assignments(hrm_update)
 if update_response:
 return {"status": status.HTTP_200_OK, "message": "Project assignments updated successfully.", "data": update_response}
 else:
@@ -275,7 +278,8 @@ async def handle_automatic_hrm_updates(db=Depends(get_db), Authorize: AuthJWT = 
 try:
 Authorize.jwt_required()
 Logic to handle automatic updates from the HRM system
-auto_update_response = handle_automatic_hrm_updates_crud(db)
+hrm_service = HRMIntegrationService()
+auto_update_response = hrm_service.handle_automatic_updates()
 if auto_update_response:
 return {"status": status.HTTP_200_OK, "message": "Automatic HRM updates handled successfully.", "data": auto_update_response}
 else:
