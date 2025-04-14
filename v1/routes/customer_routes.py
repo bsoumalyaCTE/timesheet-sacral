@@ -223,7 +223,8 @@ anonymize: bool = Query(False),   Option to anonymize customer names
 db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
 try:
 Authorize.jwt_required()
-check_user_role("Project Manager", Authorize)
+Check user role for access to customer list
+check_user_role("Viewer", Authorize)
 except HTTPException as e:
 raise e
 except Exception as e:
@@ -373,4 +374,4 @@ db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
 try:
 Authorize.jwt_required()
 except Exception as e:
-raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token
+raise HTTPException(status_code
