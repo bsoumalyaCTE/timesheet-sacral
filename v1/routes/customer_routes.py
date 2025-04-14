@@ -100,6 +100,24 @@ logger.info(f"Customer data for customer ID: {customer_id} updated with CRM data
 except Exception as e:
 logger.error(f"Error synchronizing customer data with CRM: {str(e)}")
 raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="CRM synchronization failed.")
+New function to import customers from CRM
+def import_customers_from_crm(db: Session):
+try:
+Placeholder for CRM API call to import customer data
+logger.info("Importing customers from CRM...")
+Simulate importing data
+crm_customers = [{"name": "CRM Customer 1", "description": "Imported from CRM"},
+{"name": "CRM Customer 2", "description": "Imported from CRM"}]
+for crm_customer in crm_customers:
+customer_data = CustomerCreate(
+name=crm_customer["name"],
+description=crm_customer["description"]
+)
+create_customer_crud(db, customer_data)
+logger.info("Customers imported from CRM successfully.")
+except Exception as e:
+logger.error(f"Error importing customers from CRM: {str(e)}")
+raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="CRM import failed.")
 Update a customer by ID
 @customer_router.put("/{customer_id}", response_model=CustomerResponse)
 def update_customer(
@@ -355,22 +373,3 @@ def edit_project_team(
 project_id: int,
 team_members: List[int] = Form(...),   List of team member IDs
 allocations: List[float] = Form(...),   Corresponding allocation percentages
-db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
-try:
-Authorize.jwt_required()
-except Exception as e:
-raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid or expired.")
-if sum(allocations) > 100:
-raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Total allocation exceeds 100%.")
-Logic to edit team members of a project
-Assuming a function `edit_project_team_crud` exists
-team_data = {
-"project_id": project_id,
-"team_members": team_members,
-"allocations": allocations
-}
-crud_response = edit_project_team_crud(db, team_data)
-if crud_response:
-Broadcast the update to all active sessions (pseudo-code, implement as needed)
-broadcast_update_to_sessions()
-return {"status": status.HTTP
