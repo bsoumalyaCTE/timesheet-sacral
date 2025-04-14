@@ -179,3 +179,36 @@ return {"message": "User logged in successfully"}
 except Exception as e:
 logger.error(f"Error logging in user: {str(e)}")
 raise HTTPException(status_code=400, detail="Failed to log in user")
+New CRUD operations for time tracking integration
+def set_time_tracking_integration(db, user_id, tool_name):
+try:
+user = db.query(User).filter(User.id == user_id).first()
+if not user:
+raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+user.time_tracking_tool = tool_name
+db.commit()
+return {"message": "Time tracking tool set successfully"}
+except Exception as e:
+logger.error(f"Error setting time tracking integration: {str(e)}")
+raise HTTPException(status_code=400, detail="Failed to set time tracking integration")
+def get_time_tracking_data_crud(db, user_id):
+try:
+user = db.query(User).filter(User.id == user_id).first()
+if not user:
+raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+if not user.time_tracking_tool:
+raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Time tracking tool not set")
+Simulate fetching time tracking data
+time_tracking_data = fetch_time_tracking_data(user.time_tracking_tool, user_id)
+return time_tracking_data
+except Exception as e:
+logger.error(f"Error fetching time tracking data: {str(e)}")
+raise HTTPException(status_code=400, detail="Failed to fetch time tracking data")
+def fetch_time_tracking_data(tool_name, user_id):
+Placeholder function to simulate fetching data from a time tracking tool
+In a real implementation, this would involve API calls to the time tracking tool
+return {
+"user_id": user_id,
+"tool_name": tool_name,
+"time_entries": []
+}
