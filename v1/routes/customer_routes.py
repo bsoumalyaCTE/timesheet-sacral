@@ -260,6 +260,7 @@ Delete a customer by ID
 def delete_customer(customer_id: int, db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
 try:
 Authorize.jwt_required()
+Check user role for delete operation
 check_user_role("Project Manager", Authorize)   Ensure the user has the necessary role to delete a customer
 except HTTPException as e:
 raise e
@@ -368,5 +369,4 @@ Broadcast the update to all active sessions (pseudo-code, implement as needed)
 broadcast_update_to_sessions()
 return {"status": status.HTTP_200_OK, "message": "Customer added from dropdown successfully.", "data": crud_response}
 else:
-raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Customer addition failed.")
-New endpoint to add
+raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="
