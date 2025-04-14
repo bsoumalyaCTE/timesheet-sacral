@@ -214,3 +214,20 @@ else:
 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No customer data found.")
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized access.")
+New endpoint for assigning project teams
+@user_router.post("/projects/{project_id}/assign_team", tags=["Projects"], summary="Assign Project Team", description="Assign a team to a project with work allocation.")
+async def assign_project_team(project_id: int, team_assignment: TeamAssignmentModel, db=Depends(get_db), Authorize: AuthJWT = Depends()):
+try:
+Authorize.jwt_required()
+Validate total work allocation
+total_allocation = sum(member.allocation for member in team_assignment.members)
+if total_allocation > 100:
+raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Total work allocation exceeds 100%.")
+Logic to assign team to project
+crud_response = assign_team_to_project_crud(db, project_id, team_assignment)
+if crud_response:
+return {"status": status.HTTP_200_OK, "message": "Project team assigned successfully.", "data": crud_response}
+else:
+raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Project team assignment failed.")
+except Exception as e:
+raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized access.")
