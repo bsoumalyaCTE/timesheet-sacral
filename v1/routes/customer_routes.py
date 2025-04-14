@@ -313,7 +313,7 @@ if not crud_response:
 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
 return {"status": status.HTTP_200_OK, "message": "Project updated successfully with currency and customer.", "data": crud_response}
 New endpoint to fetch all customers for the dropdown
-@customer_router.get("/all", response_model=AllCustomerResponse)
+@customer_router.get("/dropdown", response_model=AllCustomerResponse)
 def get_all_customers_for_dropdown(db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
 try:
 Authorize.jwt_required()
