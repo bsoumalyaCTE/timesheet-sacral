@@ -1,10 +1,11 @@
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Float
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Float, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.engine.url import quote_plus
 from sqlalchemy.pool import QueuePool
 import os
 from cryptography.fernet import Fernet
+from datetime import datetime
 Database configuration
 DB_HOST = "localhost"
 DB_PORT = 13306
@@ -44,6 +45,7 @@ billing_option = Column(String)   Example field for billing options
 team_assignment = Column(String)   Example field for team assignments
 customer = relationship("Customer", back_populates="projects")
 tasks = relationship("Task", order_by="Task.id", back_populates="project")
+financial_transactions = relationship("FinancialTransaction", order_by="FinancialTransaction.id", back_populates="project")
 New Task model
 class Task(Base):
 __tablename__ = 'tasks'
@@ -53,6 +55,15 @@ name = Column(String, index=True)
 status = Column(String)   Example field for task status
 time_spent = Column(Float)   Example field for time spent on task
 project = relationship("Project", back_populates="tasks")
+New FinancialTransaction model
+class FinancialTransaction(Base):
+__tablename__ = 'financial_transactions'
+id = Column(Integer, primary_key=True, index=True)
+project_id = Column(Integer, ForeignKey('projects.id'))
+amount = Column(Float)
+transaction_date = Column(DateTime, default=datetime.utcnow)
+billing_type = Column(String)   Fixed rate or time & material
+project = relationship("Project", back_populates="financial_transactions")
 Dependency to get the database session
 def get_db():
 db = SessionLocal()
