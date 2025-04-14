@@ -8,6 +8,7 @@ from v1.cruds.crm_integration import *
 from v1.services.role_service import RoleService
 from v1.models.audit_log import AuditLog
 from v1.services.mfa_service import MFAService   Assuming there's an MFA service
+import os
 user_router = APIRouter(prefix="/user", tags=["Users"])
 @AuthJWT.load_config
 def get_config():
@@ -23,7 +24,20 @@ authjwt_roles: dict = {
 }
 Add multi-factor authentication options if needed
 authjwt_mfa_enabled: bool = True
+Financial system API connection settings
+financial_api_url: str = os.getenv("FINANCIAL_API_URL", "https://api.financialsystem.com")
+financial_api_key: str = os.getenv("FINANCIAL_API_KEY", "your_financial_api_key")
+financial_api_timeout: int = int(os.getenv("FINANCIAL_API_TIMEOUT", 30))
 return Settings()
+Error handling middleware for financial system integration
+async def financial_system_error_handler(request, call_next):
+try:
+response = await call_next(request)
+return response
+except Exception as e:
+Log the error and return a generic error message
+Ensure compliance with data protection and privacy regulations
+return HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Financial system integration error.")
 @user_router.post("/signup", response_model=userSignUpResponse, status_code=status.HTTP_201_CREATED,
 tags=["Users"], summary="User Signup", description="Create a new user.",
 response_description="User created successfully.")
