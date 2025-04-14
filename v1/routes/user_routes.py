@@ -47,6 +47,11 @@ response_description="User created successfully.")
 async def signup_user(user: signUpModel, db=Depends(get_db)):
 crud_response = signup_user_crud(db, user)
 if crud_response:
+Assign default role to the new user
+role_service = RoleService(db)
+default_role_assignment = role_service.assign_default_role(crud_response['id'])
+if not default_role_assignment:
+raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Default role assignment failed.")
 return {"status": status.HTTP_200_OK, "message": "User created successfully.", "data": crud_response}
 else:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User creation failed.")
@@ -301,9 +306,4 @@ else:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Time tracking integration configuration failed.")
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized access.")
-@user_router.get("/projects/{project_id}/time_tracking", tags=["Projects"], summary="Get Time Tracking Data", description="Retrieve time tracking data for a project.")
-async def get_time_tracking_data(project_id: int, db=Depends(get_db), Authorize: AuthJWT = Depends()):
-try:
-Authorize.jwt_required()
-Logic to retrieve time tracking data
-time_tracking_data = get_time_tracking_data_crud(db, project
+@user_router.get("/projects/{project_id}/time_tracking", tags=["Projects"], summary="Get Time Tracking Data", description="Retrieve time tracking data
