@@ -1,5 +1,5 @@
 from fastapi import HTTPException, status
-from configs.models import Project, ProjectTeam, User, Customer   Assuming Customer model is defined
+from configs.models import Project, ProjectTeam, User, Customer, Role   Assuming Role model is defined
 from datetime import datetime
 import requests
 import logging
@@ -157,6 +157,10 @@ availability=user_data['availability'],
 time_tracking_tool=user_data.get('time_tracking_tool')   New field for time tracking tool
 )
 db.add(new_user)
+Assign default role to new user
+default_role = db.query(Role).filter(Role.name == "default").first()
+if default_role:
+new_user.roles.append(default_role)
 db.commit()
 return {"message": "User signed up successfully"}
 except Exception as e:
