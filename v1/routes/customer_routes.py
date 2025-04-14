@@ -261,6 +261,7 @@ Create a new project
 def create_project(
 name: str = Form(...),
 currency: str = Form(...),
+customer_id: int = Form(...),   New field for customer selection
 db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
 try:
 Authorize.jwt_required()
@@ -268,15 +269,19 @@ except Exception as e:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid or expired.")
 if currency not in CURRENCIES:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid currency selected.")
-Logic to create a project with the selected currency
+Ensure customer selection is mandatory
+if not customer_id:
+raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Customer selection is mandatory.")
+Logic to create a project with the selected currency and customer
 Assuming a function `create_project_crud` exists
 project_data = {
 "name": name,
-"currency": currency
+"currency": currency,
+"customer_id": customer_id
 }
 crud_response = create_project_crud(db, project_data)
 if crud_response:
-return {"status": status.HTTP_200_OK, "message": "Project created successfully with currency.", "data": crud_response}
+return {"status": status.HTTP_200_OK, "message": "Project created successfully with currency and customer.", "data": crud_response}
 else:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Project creation failed.")
 Update a project by ID
@@ -285,6 +290,7 @@ def update_project(
 project_id: int,
 name: str = Form(...),
 currency: str = Form(...),
+customer_id: int = Form(...),   New field for customer selection
 db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
 try:
 Authorize.jwt_required()
@@ -292,16 +298,20 @@ except Exception as e:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid or expired.")
 if currency not in CURRENCIES:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid currency selected.")
-Logic to update a project with the selected currency
+Ensure customer selection is mandatory
+if not customer_id:
+raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Customer selection is mandatory.")
+Logic to update a project with the selected currency and customer
 Assuming a function `update_project_crud` exists
 project_data = {
 "name": name,
-"currency": currency
+"currency": currency,
+"customer_id": customer_id
 }
 crud_response = update_project_crud(db, project_id, project_data)
 if not crud_response:
 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
-return {"status": status.HTTP_200_OK, "message": "Project updated successfully with currency.", "data": crud_response}
+return {"status": status.HTTP_200_OK, "message": "Project updated successfully with currency and customer.", "data": crud_response}
 New endpoint to fetch all customers for the dropdown
 @customer_router.get("/all", response_model=AllCustomerResponse)
 def get_all_customers_for_dropdown(db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
@@ -362,15 +372,4 @@ Assuming a function `add_project_team_crud` exists
 team_data = {
 "project_id": project_id,
 "team_members": team_members,
-"allocations": allocations
-}
-crud_response = add_project_team_crud(db, team_data)
-if crud_response:
-Broadcast the update to all active sessions (pseudo-code, implement as needed)
-broadcast_update_to_sessions()
-return {"status": status.HTTP_200_OK, "message": "Project team added successfully.", "data": crud_response}
-else:
-raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Project team addition failed.")
-New endpoint to edit a project team
-@project_router.put("/edit_team/{project_id}", status_code=status.HTTP_200_OK)
-def edit
+"allocations
