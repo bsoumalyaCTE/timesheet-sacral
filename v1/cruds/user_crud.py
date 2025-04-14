@@ -27,6 +27,7 @@ allocation=member['allocation']
 )
 db.add(project_team)
 db.commit()
+log_user_activity(user_id=user.id, action="Assign Project Team", timestamp=datetime.now())
 return {"message": "Project team assigned successfully"}
 except Exception as e:
 logger.error(f"Error assigning project team: {str(e)}")
@@ -52,6 +53,7 @@ allocation=member['allocation']
 )
 db.add(project_team)
 db.commit()
+log_user_activity(user_id=user.id, action="Update Project Team", timestamp=datetime.now())
 return {"message": "Project team updated successfully"}
 except Exception as e:
 logger.error(f"Error updating project team: {str(e)}")
@@ -65,6 +67,7 @@ Fetch financial data related to the user's projects
 financial_data = fetch_financial_data_from_system(user_id)
 if not financial_data:
 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Financial data not found")
+log_user_activity(user_id=user.id, action="Fetch Financial Data", timestamp=datetime.now())
 return financial_data
 except Exception as e:
 logger.error(f"Error fetching user financial data: {str(e)}")
@@ -106,12 +109,14 @@ availability=employee['availability']
 )
 db.add(new_user)
 db.commit()
+log_user_activity(user_id=None, action="Update Employee Data", timestamp=datetime.now())
 except Exception as e:
 logger.error(f"Error updating employee data: {str(e)}")
 raise HTTPException(status_code=400, detail=str(e))
 def get_all_customers_crud(db):
 try:
 customers = db.query(Customer).all()
+log_user_activity(user_id=None, action="Fetch All Customers", timestamp=datetime.now())
 return customers
 except Exception as e:
 logger.error(f"Error fetching customers: {str(e)}")
@@ -144,6 +149,7 @@ availability=employee['availability']
 )
 db.add(new_user)
 db.commit()
+log_user_activity(user_id=None, action="Update User Information", timestamp=datetime.now())
 except Exception as e:
 logger.error(f"Error updating user information: {str(e)}")
 raise HTTPException(status_code=400, detail="Failed to update user information")
@@ -224,6 +230,7 @@ if not user.time_tracking_tool:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Time tracking tool not set")
 Simulate fetching time tracking data
 time_tracking_data = fetch_time_tracking_data(user.time_tracking_tool, user_id)
+log_user_activity(user_id=user.id, action="Fetch Time Tracking Data", timestamp=datetime.now())
 return time_tracking_data
 except Exception as e:
 logger.error(f"Error fetching time tracking data: {str(e)}")
