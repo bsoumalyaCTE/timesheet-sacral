@@ -65,10 +65,20 @@ Initiate MFA process
 mfa_service = MFAService()
 mfa_response = mfa_service.initiate_mfa(user.email)
 if mfa_response:
+Check user role and permissions
+user_roles = Authorize.get_raw_jwt().get("roles", [])
+if not any(role in user_roles for role in ["admin", "user"]):
+raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to access.")
+Log the login attempt
+audit_log = AuditLog(db)
+audit_log.record_login_attempt(user.email, success=True)
 return {"status": status.HTTP_200_OK, "message": "MFA initiated. Please verify.", "data": crud_response}
 else:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="MFA initiation failed.")
 else:
+Log the failed login attempt
+audit_log = AuditLog(db)
+audit_log.record_login_attempt(user.email, success=False)
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials.")
 @user_router.post("/refresh", tags=["Users"], summary="Refresh Token", description="Generate a new access token using the refresh token.")
 async def refresh_token(Authorize: AuthJWT = Depends()):
@@ -299,11 +309,4 @@ async def configure_time_tracking_integration(config: TimeTrackingConfigModel, d
 try:
 Authorize.jwt_required()
 Logic to configure time tracking integration
-crud_response = configure_time_tracking_integration_crud(db, config)
-if crud_response:
-return {"status": status.HTTP_200_OK, "message": "Time tracking integration configured successfully.", "data": crud_response}
-else:
-raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Time tracking integration configuration failed.")
-except Exception as e:
-raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized access.")
-@user_router.get("/projects/{project_id}/time_tracking", tags=["Projects"], summary="Get Time Tracking Data", description="Retrieve time tracking data
+crud_response
