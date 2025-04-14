@@ -136,12 +136,15 @@ if not customers:
 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No customers found")
 def anonymize_data(data):
 return "Anonymized" if anonymize else decrypt_data(data)
-return {
+result = {
 "total": total_customers,
 "page": page,
 "page_size": page_size,
 "customers": [{"id": c.id, "name": anonymize_data(c.name), "description": anonymize_data(c.description)} for c in customers]
 }
+Log audit trail
+log_audit_trail(db, "list_customers_crud", "List customers", result)
+return result
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 def get_customer_crud(db: Session, customer_id: int):
@@ -176,6 +179,8 @@ existing_customer.currency = customer.currency
 db.commit()
 db.refresh(existing_customer)
 logging.info(f"Customer {customer_id} updated by {current_user_role}")
+Log audit trail
+log_audit_trail(db, "update_customer_crud", f"Update customer {customer_id}", existing_customer)
 return existing_customer
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -195,6 +200,8 @@ logging.error(f"Failed to delete logo file: {str(e)}")
 raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to delete logo file")
 db.delete(customer)
 db.commit()
+Log audit trail
+log_audit_trail(db, "delete_customer_crud", f"Delete customer {customer_id}", {"message": "Customer deleted successfully"})
 return {"message": "Customer deleted successfully"}
 except Exception as e:
 logging.error(f"Failed to delete customer: {str(e)}")
@@ -210,12 +217,15 @@ raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No customers 
 def anonymize_data(data):
 return "Anonymized" if anonymize else decrypt_data(data)
 customer_names = [{"id": customer.id, "name": anonymize_data(customer.name)} for customer in customers]
-return {
+result = {
 "total": total_customers,
 "page": page,
 "page_size": page_size,
 "customers": customer_names
 }
+Log audit trail
+log_audit_trail(db, "list_customers_name", "List customer names", result)
+return result
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 def get_all_customers_crud(db: Session):
@@ -245,6 +255,8 @@ db.add(new_customer)
 db.commit()
 db.refresh(new_customer)
 notify_customer_addition(new_customer)
+Log audit trail
+log_audit_trail(db, "add_customer_crud", "Add customer", new_customer)
 return new_customer
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -282,6 +294,8 @@ allocation_percentage=member['allocation_percentage']
 )
 db.add(new_member)
 db.commit()
+Log audit trail
+log_audit_trail(db, "assign_project_team_crud", f"Assign project team for project {project_id}", {"message": "Project team assigned successfully"})
 return {"message": "Project team assigned successfully"}
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -336,6 +350,8 @@ end_date=project.end_date
 db.add(new_project)
 db.commit()
 db.refresh(new_project)
+Log audit trail
+log_audit_trail(db, "create_project_crud", "Create project", new_project)
 return new_project
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -363,35 +379,9 @@ existing_project.start_date = project.start_date
 existing_project.end_date = project.end_date
 db.commit()
 db.refresh(existing_project)
+Log audit trail
+log_audit_trail(db, "update_project_crud", f"Update project {project_id}", existing_project)
 return existing_project
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 def delete_project_crud(db: Session, project_id: int):
-try:
-project = db.query(Project).filter(Project.id == project_id).first()
-if not project:
-raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
-db.delete(project)
-db.commit()
-return {"message": "Project deleted successfully"}
-except Exception as e:
-raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-def create_project_role_crud(db: Session, project_id: int, user_id: int, role: str, current_user_role: str = Depends(get_current_user_role)):
-try:
-if current_user_role not in ['Project Manager']:
-raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to assign roles")
-new_role = ProjectRole(
-project_id=project_id,
-user_id=user_id,
-role=role
-)
-db.add(new_role)
-db.commit()
-log_audit_trail(db, project_id, user_id, role, "Assigned")
-return {"message": "Role assigned successfully"}
-except Exception as e:
-raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-New function to fetch time tracking data
-def get_customer_time_tracking_data(db: Session, customer_id: int):
-try:
-Placeholder for integration with
