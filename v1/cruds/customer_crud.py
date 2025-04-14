@@ -275,11 +275,16 @@ background_tasks.add_task(sync_with_crm, db)
 return {"message": "Synchronization task has been scheduled."}
 def create_project_crud(db: Session, project):
 try:
+if not project.name or not project.description or not project.customer_id:
+raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Missing required fields")
+if project.currency not in PREDEFINED_CURRENCIES:
+raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid currency selected")
 new_project = Project(
 name=project.name,
 description=project.description,
 customer_id=project.customer_id,
 billing_option=project.billing_option,
+currency=project.currency,
 start_date=project.start_date,
 end_date=project.end_date
 )
@@ -308,6 +313,7 @@ existing_project.name = project.name
 existing_project.description = project.description
 existing_project.customer_id = project.customer_id
 existing_project.billing_option = project.billing_option
+existing_project.currency = project.currency
 existing_project.start_date = project.start_date
 existing_project.end_date = project.end_date
 db.commit()
