@@ -224,3 +224,25 @@ return {
 "tool_name": tool_name,
 "time_entries": []
 }
+New function to get user by ID with role and permission checks
+def get_user_by_id_crud(db, user_id, requesting_user_id):
+try:
+requesting_user = db.query(User).filter(User.id == requesting_user_id).first()
+if not requesting_user:
+raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Requesting user not found")
+Check if the requesting user has the necessary permissions
+if not has_permission(requesting_user, 'view_user_data'):
+raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions")
+user = db.query(User).filter(User.id == user_id).first()
+if not user:
+raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+Log the access attempt
+logger.info(f"User {requesting_user.name} accessed data for user {user.name}")
+return user
+except Exception as e:
+logger.error(f"Error fetching user by ID: {str(e)}")
+raise HTTPException(status_code=400, detail="Failed to fetch user by ID")
+def has_permission(user, permission):
+Placeholder function to check if a user has a specific permission
+In a real implementation, this would check the user's roles and permissions
+return any(role.name == permission for role in user.roles)
