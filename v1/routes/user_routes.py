@@ -1,3 +1,4 @@
+```python
 from fastapi import APIRouter, HTTPException, Depends, status
 from configs.database import get_db
 from fastapi_jwt_auth import AuthJWT
@@ -286,3 +287,24 @@ else:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Automatic HRM updates handling failed.")
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized access.")
+New endpoints for time tracking integration
+@user_router.post("/projects/time_tracking/configure", tags=["Projects"], summary="Configure Time Tracking Integration", description="Configure integration with time tracking tools.")
+async def configure_time_tracking_integration(config: TimeTrackingConfigModel, db=Depends(get_db), Authorize: AuthJWT = Depends()):
+try:
+Authorize.jwt_required()
+Logic to configure time tracking integration
+crud_response = configure_time_tracking_integration_crud(db, config)
+if crud_response:
+return {"status": status.HTTP_200_OK, "message": "Time tracking integration configured successfully.", "data": crud_response}
+else:
+raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Time tracking integration configuration failed.")
+except Exception as e:
+raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized access.")
+@user_router.get("/projects/{project_id}/time_tracking", tags=["Projects"], summary="Get Time Tracking Data", description="Retrieve time tracking data for a project.")
+async def get_time_tracking_data(project_id: int, db=Depends(get_db), Authorize: AuthJWT = Depends()):
+try:
+Authorize.jwt_required()
+Logic to retrieve time tracking data
+time_tracking_data = get_time_tracking_data_crud(db, project_id)
+if time_tracking_data:
+return {"status": status.HTTP_200_OK, "message
