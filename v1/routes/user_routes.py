@@ -6,6 +6,7 @@ from configs.schemas.user_schema import *
 from v1.cruds.user_crud import *
 from v1.cruds.project_crud import *
 from v1.cruds.crm_integration import *
+from v1.cruds.time_tracking_crud import *   Assuming this CRUD exists for time tracking
 from v1.services.role_service import RoleService
 from v1.models.audit_log import AuditLog
 from v1.services.mfa_service import MFAService   Assuming there's an MFA service
@@ -305,6 +306,4 @@ async def get_time_tracking_data(project_id: int, db=Depends(get_db), Authorize:
 try:
 Authorize.jwt_required()
 Logic to retrieve time tracking data
-time_tracking_data = get_time_tracking_data_crud(db, project_id)
-if time_tracking_data:
-return {"status": status.HTTP_200_OK, "message
+time_tracking_data = get_time_tracking_data_crud(db, project
