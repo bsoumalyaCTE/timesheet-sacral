@@ -1,3 +1,4 @@
+```python
 from fastapi import APIRouter, HTTPException, Depends, status, BackgroundTasks
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
@@ -59,11 +60,51 @@ return {"message": "CRM synchronization completed successfully"}
 except Exception as e:
 logging.error(f"CRM synchronization failed: {str(e)}")
 raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+def check_customer_in_crm(customer_name: str) -> Optional[dict]:
+try:
+crm_api_url = "https://example-crm.com/api/customers"
+response = requests.get(crm_api_url)
+if response.status_code != 200:
+raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to fetch data from CRM")
+crm_customers = response.json()
+for crm_customer in crm_customers:
+if crm_customer['name'] == customer_name:
+return crm_customer
+return None
+except Exception as e:
+logging.error(f"Failed to check customer in CRM: {str(e)}")
+raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 def create_customer_crud(db: Session, customer):
 try:
 existing_customer = db.query(Customer).filter(Customer.name == customer.name).first()
 if existing_customer:
-raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Customer already exists")
+raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Customer already exists in local database")
+crm_customer = check_customer_in_crm(customer.name)
+if crm_customer:
+Update local record with CRM data
+existing_customer = db.query(Customer).filter(Customer.name == crm_customer['name']).first()
+if existing_customer:
+existing_customer.description = crm_customer['description']
+existing_customer.logo = crm_customer['logo']
+existing_customer.hourly_rate = crm_customer['hourly_rate']
+existing_customer.currency = crm_customer['currency']
+db.commit()
+db.refresh(existing_customer)
+return existing_customer
+else:
+new_customer = Customer(
+name=encrypt_data(crm_customer['name']),
+description=encrypt_data(crm_customer['description']),
+logo=crm_customer['logo'],
+create_timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+hourly_rate=crm_customer['hourly_rate'],
+currency=crm_customer['currency']
+)
+db.add(new_customer)
+db.commit()
+db.refresh(new_customer)
+notify_customer_addition(new_customer)
+return new_customer
 if customer.currency not in PREDEFINED_CURRENCIES:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid currency selected")
 new_customer = Customer(
@@ -349,32 +390,4 @@ log_audit_trail(db, project_id, user_id, role, "Assigned")
 return {"message": "Role assigned successfully"}
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-def update_project_role_crud(db: Session, project_id: int, user_id: int, role: str, current_user_role: str = Depends(get_current_user_role)):
-try:
-if current_user_role not in ['Project Manager']:
-raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to update roles")
-existing_role = db.query(ProjectRole).filter(
-ProjectRole.project_id == project_id,
-ProjectRole.user_id == user_id
-).first()
-if not existing_role:
-raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Role not found")
-existing_role.role = role
-db.commit()
-log_audit_trail(db, project_id, user_id, role, "Updated")
-return {"message": "Role updated successfully"}
-except Exception as e:
-raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-def log_audit_trail(db: Session, project_id: int, user_id: int, role: str, action: str):
-try:
-audit_entry = AuditTrail(
-project_id=project_id,
-user_id=user_id,
-role=role,
-action=action,
-timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-)
-db.add(audit_entry)
-db.commit()
-except Exception as e:
-logging.error(f"Failed to log audit trail: {str(e)}")
+def update_project_role_crud(db: Session, project_id: int, user_id: int, role: str, current_user_role: str = Depends(get_current_user
