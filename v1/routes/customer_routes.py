@@ -1,3 +1,4 @@
+```python
 from fastapi import APIRouter, HTTPException, Depends, status, File, UploadFile, Form, Query
 from sqlalchemy.orm import Session
 from fastapi_jwt_auth import AuthJWT
@@ -200,6 +201,9 @@ except HTTPException as e:
 raise e
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid or expired.")
+try:
+Fetch and sync customer data from CRM
+periodic_crm_sync()
 crud_response = list_customers_crud(db, page, page_size)
 customer_name_response = list_customers_name(db)
 if not crud_response:
@@ -211,6 +215,9 @@ if anonymize:
 for customer in crud_response:
 customer.name = "Anonymous"
 return {"status": status.HTTP_200_OK, "message": "All Customer Lists.", "data": crud_response, "customer_names": customer_name_response}
+except Exception as e:
+logger.error(f"Error listing customers: {str(e)}")
+raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error listing customers.")
 Delete a customer by ID
 @customer_router.delete("/{customer_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_customer(customer_id: int, db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
@@ -366,6 +373,4 @@ crud_response = edit_project_team_crud(db, team_data)
 if crud_response:
 Broadcast the update to all active sessions (pseudo-code, implement as needed)
 broadcast_update_to_sessions()
-return {"status": status.HTTP_200_OK, "message": "Project team updated successfully.", "data": crud_response}
-else:
-raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Project team update failed.")
+return {"status": status.HTTP
