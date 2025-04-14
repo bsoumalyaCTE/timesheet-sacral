@@ -232,6 +232,10 @@ Anonymize customer names if requested
 if anonymize:
 for customer in crud_response:
 customer.name = "Anonymous"
+Fetch financial data and merge with customer data
+financial_data = fetch_financial_data_for_customers(crud_response)
+for customer in crud_response:
+customer.financial_data = financial_data.get(customer.id, {})
 return {"status": status.HTTP_200_OK, "message": "All Customer Lists.", "data": crud_response, "customer_names": customer_name_response}
 except Exception as e:
 logger.error(f"Error listing customers: {str(e)}")
@@ -369,7 +373,4 @@ else:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Project team addition failed.")
 New endpoint to edit a project team
 @project_router.put("/edit_team/{project_id}", status_code=status.HTTP_200_OK)
-def edit_project_team(
-project_id: int,
-team_members: List[int] = Form(...),   List of team member IDs
-allocations: List[float] = Form(...),   Corresponding allocation percentages
+def edit
