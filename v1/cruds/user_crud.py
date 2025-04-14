@@ -162,3 +162,20 @@ return {"message": "User signed up successfully"}
 except Exception as e:
 logger.error(f"Error signing up user: {str(e)}")
 raise HTTPException(status_code=400, detail="Failed to sign up user")
+New function to handle login and support additional load from the new project module
+def login_user_crud(db, user_credentials):
+try:
+user = db.query(User).filter(User.name == user_credentials['name']).first()
+if not user:
+raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+Check password (assuming user_credentials contains a 'password' field)
+if user.password != user_credentials['password']:
+raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect password")
+Handle time tracking tool preferences
+if user.time_tracking_tool:
+Logic to integrate with the selected time tracking tool
+pass
+return {"message": "User logged in successfully"}
+except Exception as e:
+logger.error(f"Error logging in user: {str(e)}")
+raise HTTPException(status_code=400, detail="Failed to log in user")
