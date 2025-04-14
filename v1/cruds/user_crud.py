@@ -6,6 +6,8 @@ import logging
 Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+Import the audit logging function from the audit trail management module
+from audit_trail import log_user_activity
 def assign_project_team_crud(db, project_id, team_data):
 try:
 project = db.query(Project).filter(Project.id == project_id).first()
@@ -162,9 +164,13 @@ default_role = db.query(Role).filter(Role.name == "default").first()
 if default_role:
 new_user.roles.append(default_role)
 db.commit()
+Log the user creation activity
+log_user_activity(user_id=new_user.id, action="User Signup", timestamp=datetime.now())
 return {"message": "User signed up successfully"}
 except Exception as e:
 logger.error(f"Error signing up user: {str(e)}")
+Log the failed signup attempt
+log_user_activity(user_id=user_data.get('id'), action="User Signup Failed", timestamp=datetime.now(), error=str(e))
 raise HTTPException(status_code=400, detail="Failed to sign up user")
 New function to handle login and support additional load from the new project module
 def login_user_crud(db, user_credentials):
@@ -183,6 +189,8 @@ if not user.roles:
 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User has no roles assigned")
 Log the access attempt
 logger.info(f"User {user.name} logged in successfully with roles: {[role.name for role in user.roles]}")
+Log the login activity
+log_user_activity(user_id=user.id, action="User Login", timestamp=datetime.now())
 Handle time tracking tool preferences
 if user.time_tracking_tool:
 Logic to integrate with the selected time tracking tool
@@ -190,6 +198,8 @@ pass
 return {"message": "User logged in successfully"}
 except Exception as e:
 logger.error(f"Error logging in user: {str(e)}")
+Log the failed login attempt
+log_user_activity(user_id=user_credentials.get('id'), action="User Login Failed", timestamp=datetime.now(), error=str(e))
 raise HTTPException(status_code=400, detail="Failed to log in user")
 New CRUD operations for time tracking integration
 def set_time_tracking_integration(db, user_id, tool_name):
@@ -199,6 +209,8 @@ if not user:
 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 user.time_tracking_tool = tool_name
 db.commit()
+Log the time tracking tool setting activity
+log_user_activity(user_id=user.id, action="Set Time Tracking Tool", timestamp=datetime.now())
 return {"message": "Time tracking tool set successfully"}
 except Exception as e:
 logger.error(f"Error setting time tracking integration: {str(e)}")
@@ -238,6 +250,8 @@ if not user:
 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 Log the access attempt
 logger.info(f"User {requesting_user.name} accessed data for user {user.name}")
+Log the user data access activity
+log_user_activity(user_id=requesting_user.id, action=f"Accessed User Data for {user.name}", timestamp=datetime.now())
 return user
 except Exception as e:
 logger.error(f"Error fetching user by ID: {str(e)}")
