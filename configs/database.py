@@ -6,6 +6,7 @@ from sqlalchemy.pool import QueuePool
 import os
 from cryptography.fernet import Fernet
 from datetime import datetime
+import logging
 Database configuration
 DB_HOST = "localhost"
 DB_PORT = 13306
@@ -69,6 +70,9 @@ def get_db():
 db = SessionLocal()
 try:
 yield db
+except Exception as e:
+logging.error(f"Database session error: {e}")
+raise
 finally:
 db.close()
 Ensure the tables are created
@@ -100,6 +104,9 @@ yield db
 db.commit()   Commit the transaction if no exceptions
 except Exception as e:
 db.rollback()   Rollback the transaction in case of error
+logging.error(f"Transaction error: {e}")
 raise e
 finally:
 db.close()
+Setup logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
