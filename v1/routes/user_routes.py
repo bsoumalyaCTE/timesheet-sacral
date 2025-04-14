@@ -309,4 +309,4 @@ except Exception as e:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized access.")
 New endpoints for time tracking integration
 @user_router.post("/projects/time_tracking/configure", tags=["Projects"], summary="Configure Time Tracking Integration", description="Configure integration with time tracking tools.")
-async def configure
+async def configure_time
