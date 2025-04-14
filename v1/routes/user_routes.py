@@ -201,3 +201,16 @@ else:
 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No synchronization logs found.")
 except Exception as e:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized access.")
+@user_router.get("/crm/customers/dropdown", tags=["CRM"], summary="Customer Dropdown", description="Get customer data for dropdown.")
+async def get_customer_dropdown(db=Depends(get_db), Authorize: AuthJWT = Depends()):
+try:
+Authorize.jwt_required()
+Logic to retrieve customer data for dropdown
+customer_data = get_synchronized_customers_crud(db)
+if customer_data:
+dropdown_data = [{"id": customer["id"], "name": customer["name"]} for customer in customer_data]
+return {"status": status.HTTP_200_OK, "message": "Customer dropdown data retrieved successfully.", "data": dropdown_data}
+else:
+raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No customer data found.")
+except Exception as e:
+raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized access.")
