@@ -175,6 +175,14 @@ raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not foun
 Check password (assuming user_credentials contains a 'password' field)
 if user.password != user_credentials['password']:
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect password")
+Check if user is locked or disabled
+if not user.is_enabled or user.is_locked:
+raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User account is locked or disabled")
+Check user roles and permissions
+if not user.roles:
+raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User has no roles assigned")
+Log the access attempt
+logger.info(f"User {user.name} logged in successfully with roles: {[role.name for role in user.roles]}")
 Handle time tracking tool preferences
 if user.time_tracking_tool:
 Logic to integrate with the selected time tracking tool
