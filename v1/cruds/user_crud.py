@@ -145,3 +145,20 @@ db.commit()
 except Exception as e:
 logger.error(f"Error updating user information: {str(e)}")
 raise HTTPException(status_code=400, detail="Failed to update user information")
+Extend the User model to include preferences for time tracking tool integration
+def signup_user_crud(db, user_data):
+try:
+Assuming user_data is a dictionary containing user details
+new_user = User(
+id=user_data['id'],
+name=user_data['name'],
+role=user_data['role'],
+availability=user_data['availability'],
+time_tracking_tool=user_data.get('time_tracking_tool')   New field for time tracking tool
+)
+db.add(new_user)
+db.commit()
+return {"message": "User signed up successfully"}
+except Exception as e:
+logger.error(f"Error signing up user: {str(e)}")
+raise HTTPException(status_code=400, detail="Failed to sign up user")
