@@ -188,6 +188,8 @@ include_time_tracking: bool = Query(False),   New query parameter to include tim
 db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
 try:
 Authorize.jwt_required()
+Check user role for access to customer information
+check_user_role("Viewer", Authorize)
 Verify MFA token
 mfa_token = "some_mfa_token"   This should be passed as a parameter or obtained from the request
 if not verify_mfa(mfa_token):
@@ -367,6 +369,4 @@ broadcast_update_to_sessions()
 return {"status": status.HTTP_200_OK, "message": "Customer added from dropdown successfully.", "data": crud_response}
 else:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Customer addition failed.")
-New endpoint to add a project team
-@project_router.post("/add_team", status_code=status.HTTP_201_CREATED)
-def
+New endpoint to add
