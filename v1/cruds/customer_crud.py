@@ -85,6 +85,7 @@ raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 @lru_cache(maxsize=128)
 def list_customers_crud(db: Session, page: int = 1, page_size: int = 10, filter: Optional[str] = None, anonymize: bool = False):
 try:
+sync_with_crm(db)   Synchronize with CRM before listing
 query = db.query(Customer)
 if filter:
 query = query.filter(or_(Customer.name.ilike(f"%{filter}%"), Customer.description.ilike(f"%{filter}%")))
@@ -159,6 +160,7 @@ logging.error(f"Failed to delete customer: {str(e)}")
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 def list_customers_name(db: Session, page: int = 1, page_size: int = 10, anonymize: bool = False):
 try:
+sync_with_crm(db)   Synchronize with CRM before listing
 query = db.query(Customer)
 total_customers = query.count()
 customers = query.offset((page - 1) * page_size).limit(page_size).all()
@@ -207,6 +209,7 @@ except Exception as e:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 def get_customers_for_dropdown(db: Session):
 try:
+sync_with_crm(db)   Synchronize with CRM before listing
 customers = db.query(Customer).all()
 if not customers:
 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No customers found")
