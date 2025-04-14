@@ -56,8 +56,10 @@ raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid MF
 Check user role
 check_user_role("Project Manager", Authorize)
 except HTTPException as e:
+log_audit_trail("Create Customer Attempt", Authorize.get_jwt_subject(), "Failed due to insufficient permissions or invalid token.")
 raise e
 except Exception as e:
+log_audit_trail("Create Customer Attempt", Authorize.get_jwt_subject(), "Failed due to invalid or expired token.")
 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid or expired.")
 Save the uploaded image file if provided
 if logo:
@@ -76,6 +78,7 @@ crud_response = create_customer_crud(db, customer_data)
 if crud_response:
 Trigger synchronization with CRM after customer creation
 sync_with_crm.delay(crud_response.id)
+log_audit_trail("Create Customer", Authorize.get_jwt_subject(), f"Customer created successfully with ID: {crud_response.id}")
 return {"status": status.HTTP_200_OK, "message": "Customer created successfully.", "data": crud_response}
 else:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User creation failed.")
@@ -366,12 +369,4 @@ else:
 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Customer addition failed.")
 New endpoint to add a project team
 @project_router.post("/add_team", status_code=status.HTTP_201_CREATED)
-def add_project_team(
-project_id: int,
-team_members: List[int] = Form(...),   List of team member IDs
-allocations: List[float] = Form(...),   Corresponding allocation percentages
-db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
-try:
-Authorize.jwt_required()
-except Exception as e:
-raise HTTPException(status_code
+def
