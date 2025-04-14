@@ -28,7 +28,7 @@ project_router = APIRouter(prefix="/project", tags=["Projects"])
 Predefined list of currencies
 CURRENCIES = ["USD", "EUR", "GBP", "INR", "JPY"]
 Role-based access control
-ROLES = ["Project Manager", "Team Member", "Viewer"]
+ROLES = ["Project Manager", "Team Member", "Viewer", "Admin"]
 Function to check if the user has the required role
 def check_user_role(required_role: str, Authorize: AuthJWT):
 user_roles = Authorize.get_raw_jwt().get("roles", [])
@@ -128,7 +128,8 @@ logo: UploadFile = File(None),   Accept `logo` as a file
 db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):   Verify the JWT token
 try:
 Authorize.jwt_required()
-check_user_role("Project Manager", Authorize)
+Check user role for update operation
+check_user_role("Admin", Authorize)
 except HTTPException as e:
 raise e
 except Exception as e:
@@ -372,5 +373,4 @@ db: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
 try:
 Authorize.jwt_required()
 except Exception as e:
-raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid or expired.")
-if sum(allocations
+raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token
